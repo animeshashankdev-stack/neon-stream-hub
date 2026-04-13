@@ -14,7 +14,299 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      content: {
+        Row: {
+          banner_url: string | null
+          created_at: string
+          description: string | null
+          duration_minutes: number | null
+          featured: boolean | null
+          id: string
+          language: string | null
+          poster_url: string | null
+          rating: number | null
+          release_year: number | null
+          status: Database["public"]["Enums"]["content_status"] | null
+          thumbnail_url: string | null
+          title: string
+          type: Database["public"]["Enums"]["content_type"]
+          updated_at: string
+        }
+        Insert: {
+          banner_url?: string | null
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          featured?: boolean | null
+          id?: string
+          language?: string | null
+          poster_url?: string | null
+          rating?: number | null
+          release_year?: number | null
+          status?: Database["public"]["Enums"]["content_status"] | null
+          thumbnail_url?: string | null
+          title: string
+          type?: Database["public"]["Enums"]["content_type"]
+          updated_at?: string
+        }
+        Update: {
+          banner_url?: string | null
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          featured?: boolean | null
+          id?: string
+          language?: string | null
+          poster_url?: string | null
+          rating?: number | null
+          release_year?: number | null
+          status?: Database["public"]["Enums"]["content_status"] | null
+          thumbnail_url?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["content_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      content_genres: {
+        Row: {
+          content_id: string
+          genre_id: string
+          id: string
+        }
+        Insert: {
+          content_id: string
+          genre_id: string
+          id?: string
+        }
+        Update: {
+          content_id?: string
+          genre_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_genres_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_genres_genre_id_fkey"
+            columns: ["genre_id"]
+            isOneToOne: false
+            referencedRelation: "genres"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      episodes: {
+        Row: {
+          content_id: string
+          created_at: string
+          description: string | null
+          duration_seconds: number | null
+          episode_number: number
+          id: string
+          season_number: number
+          thumbnail_url: string | null
+          title: string | null
+        }
+        Insert: {
+          content_id: string
+          created_at?: string
+          description?: string | null
+          duration_seconds?: number | null
+          episode_number: number
+          id?: string
+          season_number?: number
+          thumbnail_url?: string | null
+          title?: string | null
+        }
+        Update: {
+          content_id?: string
+          created_at?: string
+          description?: string | null
+          duration_seconds?: number | null
+          episode_number?: number
+          id?: string
+          season_number?: number
+          thumbnail_url?: string | null
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "episodes_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      genres: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          level: number
+          updated_at: string
+          user_id: string
+          xp: number
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          level?: number
+          updated_at?: string
+          user_id: string
+          xp?: number
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          level?: number
+          updated_at?: string
+          user_id?: string
+          xp?: number
+        }
+        Relationships: []
+      }
+      video_servers: {
+        Row: {
+          created_at: string
+          episode_id: string
+          id: string
+          language: string
+          quality: string
+          server_name: string
+          stream_url: string
+        }
+        Insert: {
+          created_at?: string
+          episode_id: string
+          id?: string
+          language?: string
+          quality?: string
+          server_name?: string
+          stream_url: string
+        }
+        Update: {
+          created_at?: string
+          episode_id?: string
+          id?: string
+          language?: string
+          quality?: string
+          server_name?: string
+          stream_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_servers_episode_id_fkey"
+            columns: ["episode_id"]
+            isOneToOne: false
+            referencedRelation: "episodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      watch_history: {
+        Row: {
+          completed: boolean
+          created_at: string
+          episode_id: string
+          id: string
+          last_watched_at: string
+          progress_seconds: number
+          total_seconds: number
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          episode_id: string
+          id?: string
+          last_watched_at?: string
+          progress_seconds?: number
+          total_seconds?: number
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          episode_id?: string
+          id?: string
+          last_watched_at?: string
+          progress_seconds?: number
+          total_seconds?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watch_history_episode_id_fkey"
+            columns: ["episode_id"]
+            isOneToOne: false
+            referencedRelation: "episodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      watchlist: {
+        Row: {
+          content_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          content_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          content_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watchlist_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +315,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      content_status: "ongoing" | "completed" | "upcoming"
+      content_type: "movie" | "series"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +443,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      content_status: ["ongoing", "completed", "upcoming"],
+      content_type: ["movie", "series"],
+    },
   },
 } as const
