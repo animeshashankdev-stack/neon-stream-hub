@@ -1,20 +1,20 @@
 import { Link } from "react-router-dom";
-import { Globe, Twitter, Instagram, Youtube } from "lucide-react";
+import { Twitter, Instagram, Youtube, Globe } from "lucide-react";
 
 const Footer = () => {
   return (
     <footer className="border-t border-border/30 mt-12">
       <div className="max-w-7xl mx-auto px-6 sm:px-12 lg:px-20 py-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {/* Brand */}
           <div>
-            <h3 className="font-display font-extrabold text-lg text-gradient-neon mb-3">Neon Curator</h3>
+            <div className="flex items-center gap-2 mb-3">
+              <img src="/logo.svg" alt="Neon Curator" className="w-7 h-7" />
+              <h3 className="font-display font-extrabold text-lg text-gradient-neon">Neon Curator</h3>
+            </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
               The premium anime streaming experience. Curated content, cinematic quality, neon-powered design.
             </p>
           </div>
-
-          {/* Browse */}
           <div>
             <h4 className="font-display font-semibold text-sm mb-3">Browse</h4>
             <div className="space-y-2">
@@ -23,8 +23,6 @@ const Footer = () => {
               <Link to="/search?type=movie" className="block text-xs text-muted-foreground hover:text-foreground transition-colors">Movies</Link>
             </div>
           </div>
-
-          {/* Legal */}
           <div>
             <h4 className="font-display font-semibold text-sm mb-3">Legal</h4>
             <div className="space-y-2">
@@ -33,8 +31,6 @@ const Footer = () => {
               <a href="#" className="block text-xs text-muted-foreground hover:text-foreground transition-colors">Cookie Policy</a>
             </div>
           </div>
-
-          {/* Social */}
           <div>
             <h4 className="font-display font-semibold text-sm mb-3">Connect</h4>
             <div className="flex items-center gap-3">
@@ -45,9 +41,8 @@ const Footer = () => {
             </div>
           </div>
         </div>
-
         <div className="mt-10 pt-6 border-t border-border/20 text-center">
-          <p className="text-xs text-muted-foreground">© 2024 Neon Curator. The Cinematic Glass Canvas. All rights reserved.</p>
+          <p className="text-xs text-muted-foreground">© 2026 Neon Curator. The Cinematic Glass Canvas. All rights reserved.</p>
         </div>
       </div>
     </footer>

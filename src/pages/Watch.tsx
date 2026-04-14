@@ -156,6 +156,40 @@ const Watch = () => {
     }, 3000);
   }, [isPlaying]);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    if (useIframe) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).tagName === "INPUT") return;
+      switch (e.key) {
+        case " ":
+          e.preventDefault();
+          togglePlay();
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          skip(-10);
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          skip(10);
+          break;
+        case "f":
+        case "F":
+          e.preventDefault();
+          handleFullscreen();
+          break;
+        case "m":
+        case "M":
+          e.preventDefault();
+          setIsMuted((prev) => !prev);
+          break;
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [useIframe]);
+
   return (
     <div className="watch-container fixed inset-0 bg-black flex flex-col" onMouseMove={handleMouseMove}>
       <div className="relative flex-1 flex items-center justify-center">
