@@ -5,9 +5,9 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const navLinks = [
   { label: "Home", to: "/" },
+  { label: "Genres", to: "/genres" },
   { label: "Series", to: "/search?type=series" },
   { label: "Movies", to: "/search?type=movie" },
-  { label: "Anime", to: "/search" },
 ];
 
 const Navbar = () => {

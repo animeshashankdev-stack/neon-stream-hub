@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from "react";
-import { Search as SearchIcon, Filter, X } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Search as SearchIcon, Filter, Star } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -7,7 +7,7 @@ import ContentCard from "@/components/ContentCard";
 import SkeletonCard from "@/components/SkeletonCard";
 import { useContentList, useGenres } from "@/hooks/useContent";
 
-const years = [2024, 2023, 2022, 2021, 2020];
+const years = [2025, 2024, 2023, 2022, 2021, 2020];
 const languages = ["Japanese", "English", "Korean", "Chinese"];
 
 const Search = () => {
@@ -18,11 +18,25 @@ const Search = () => {
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [selectedLang, setSelectedLang] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query), 300);
     return () => clearTimeout(timer);
   }, [query]);
+
+  // Close suggestions on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(e.target as Node) && e.target !== inputRef.current) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const { data: genres } = useGenres();
   const { data: content, isLoading } = useContentList({
@@ -33,6 +47,7 @@ const Search = () => {
   });
 
   const filtered = content || [];
+  const suggestions = query.length >= 2 ? filtered.slice(0, 8) : [];
   const activeFilters = [selectedGenre, selectedYear, selectedLang].filter(Boolean).length;
 
   const clearFilters = () => {
@@ -45,12 +60,15 @@ const Search = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="pt-24 pb-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Search input with suggestions */}
         <div className="relative mb-6">
           <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <input
+            ref={inputRef}
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => { setQuery(e.target.value); setShowSuggestions(true); }}
+            onFocus={() => query.length >= 2 && setShowSuggestions(true)}
             placeholder="Search anime, movies, series..."
             className="w-full pl-12 pr-4 py-3.5 rounded-xl glass text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
           />
@@ -63,6 +81,34 @@ const Search = () => {
             <Filter className="w-3.5 h-3.5" />
             Filters {activeFilters > 0 && `(${activeFilters})`}
           </button>
+
+          {/* Suggestions dropdown */}
+          {showSuggestions && suggestions.length > 0 && (
+            <div ref={suggestionsRef} className="absolute top-full left-0 right-0 mt-2 glass-card p-2 z-50 max-h-96 overflow-y-auto">
+              {suggestions.map((item) => (
+                <Link
+                  key={item.id}
+                  to={`/content/${item.id}`}
+                  onClick={() => setShowSuggestions(false)}
+                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/50 transition-colors"
+                >
+                  <div className="w-10 h-14 rounded-md overflow-hidden flex-shrink-0 bg-secondary">
+                    {item.poster_url && <img src={item.poster_url} alt={item.title} className="w-full h-full object-cover" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate">{item.title}</p>
+                    <p className="text-xs text-muted-foreground truncate">{item.genres?.join(", ")}</p>
+                  </div>
+                  {item.rating && (
+                    <div className="flex items-center gap-1 text-xs text-amber-400">
+                      <Star className="w-3 h-3 fill-current" />
+                      {Number(item.rating).toFixed(1)}
+                    </div>
+                  )}
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
 
         {showFilters && (
