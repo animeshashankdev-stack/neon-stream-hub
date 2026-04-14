@@ -176,3 +176,19 @@ export function useRecommendations(contentId: string | undefined) {
     enabled: !!contentId,
   });
 }
+
+export function useVideoServers(episodeId: string | undefined) {
+  return useQuery({
+    queryKey: ["video-servers", episodeId],
+    queryFn: async () => {
+      if (!episodeId) return [];
+      const { data, error } = await supabase
+        .from("video_servers")
+        .select("*")
+        .eq("episode_id", episodeId);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!episodeId,
+  });
+}

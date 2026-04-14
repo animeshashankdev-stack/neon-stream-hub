@@ -11,6 +11,7 @@ import Watch from "./pages/Watch";
 import Auth from "./pages/Auth";
 import Watchlist from "./pages/Watchlist";
 import Profile from "./pages/Profile";
+import Genres from "./pages/Genres";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/watchlist" element={<Watchlist />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/genres" element={<Genres />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
