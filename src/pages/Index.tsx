@@ -5,6 +5,7 @@ import ContentCarousel from "@/components/ContentCarousel";
 import ContentCard from "@/components/ContentCard";
 import PopularAnimeSection from "@/components/PopularAnimeSection";
 import RecommendedSection from "@/components/RecommendedSection";
+import ContinueWatchingSection from "@/components/ContinueWatchingSection";
 import Footer from "@/components/Footer";
 import SkeletonCard from "@/components/SkeletonCard";
 import { useContentList } from "@/hooks/useContent";
@@ -16,6 +17,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <HeroBanner />
+      <ContinueWatchingSection />
 
       <ContentCarousel title="Trending Now" action="View All">
         {isLoading

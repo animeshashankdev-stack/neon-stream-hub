@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Search, Crown, Menu, X, User, LogOut, Bookmark } from "lucide-react";
+import { Search, Menu, X, User, LogOut, Bookmark, Shield } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsAdmin } from "@/hooks/useAdmin";
 
 const navLinks = [
   { label: "Home", to: "/" },
@@ -16,6 +17,7 @@ const Navbar = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const location = useLocation();
   const { user, signOut } = useAuth();
+  const { data: isAdmin } = useIsAdmin();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -28,8 +30,9 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-8">
-            <Link to="/" className="font-display font-extrabold text-lg text-gradient-neon tracking-tight">
-              Neon Curator
+            <Link to="/" className="flex items-center gap-2">
+              <img src="/logo.svg" alt="Neon Curator" className="w-8 h-8" />
+              <span className="font-display font-extrabold text-lg text-gradient-neon tracking-tight hidden sm:inline">Neon Curator</span>
             </Link>
             <div className="hidden md:flex items-center gap-1">
               {navLinks.map((link) => (
@@ -62,20 +65,17 @@ const Navbar = () => {
                 </button>
                 {showUserMenu && (
                   <div className="absolute right-0 top-10 w-48 glass-card p-2 space-y-1 z-50">
-                    <Link
-                      to="/profile"
-                      onClick={() => setShowUserMenu(false)}
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-foreground hover:bg-secondary/50 transition-colors"
-                    >
+                    <Link to="/profile" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-foreground hover:bg-secondary/50 transition-colors">
                       <User className="w-4 h-4" /> Profile
                     </Link>
-                    <Link
-                      to="/watchlist"
-                      onClick={() => setShowUserMenu(false)}
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-foreground hover:bg-secondary/50 transition-colors"
-                    >
+                    <Link to="/watchlist" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-foreground hover:bg-secondary/50 transition-colors">
                       <Bookmark className="w-4 h-4" /> Watchlist
                     </Link>
+                    {isAdmin && (
+                      <Link to="/admin" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-primary hover:bg-primary/10 transition-colors">
+                        <Shield className="w-4 h-4" /> Admin Panel
+                      </Link>
+                    )}
                     <button
                       onClick={() => { signOut(); setShowUserMenu(false); }}
                       className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-destructive hover:bg-destructive/10 transition-colors"

@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { usePageView } from "@/hooks/usePageView";
 import Index from "./pages/Index";
 import Search from "./pages/Search";
 import ContentDetail from "./pages/ContentDetail";
@@ -12,9 +13,15 @@ import Auth from "./pages/Auth";
 import Watchlist from "./pages/Watchlist";
 import Profile from "./pages/Profile";
 import Genres from "./pages/Genres";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+const PageViewTracker = () => {
+  usePageView();
+  return null;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -23,6 +30,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <PageViewTracker />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/search" element={<Search />} />
@@ -32,6 +40,7 @@ const App = () => (
             <Route path="/watchlist" element={<Watchlist />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/genres" element={<Genres />} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
