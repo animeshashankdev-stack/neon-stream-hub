@@ -24,10 +24,18 @@ const HeroBanner = () => {
   const { data: isInWatchlist } = useIsInWatchlist(current?.id);
   const toggleWatchlist = useToggleWatchlist();
 
-  if (isLoading || !current) {
+  if (isLoading) {
     return (
       <section className="relative w-full h-[85vh] min-h-[600px] bg-background animate-pulse">
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-background/20" />
+      </section>
+    );
+  }
+
+  if (!current) {
+    return (
+      <section className="relative w-full h-[60vh] min-h-[400px] bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">No featured content available</p>
       </section>
     );
   }
@@ -50,7 +58,7 @@ const HeroBanner = () => {
       <div className="relative z-10 h-full flex flex-col justify-end pb-20 px-6 sm:px-12 lg:px-20 max-w-7xl mx-auto">
         <div className="animate-fade-in">
           <div className="flex items-center gap-2 mb-3">
-            {current.genres?.map((g) => (
+            {current.genres?.slice(0, 3).map((g) => (
               <span key={g} className="px-2 py-0.5 rounded-md bg-primary/20 text-primary text-[10px] font-bold uppercase tracking-wider">
                 {g}
               </span>
@@ -81,7 +89,6 @@ const HeroBanner = () => {
             )}
           </div>
 
-          {/* Dots */}
           {items.length > 1 && (
             <div className="flex items-center gap-2 mt-8">
               {items.map((_, idx) => (

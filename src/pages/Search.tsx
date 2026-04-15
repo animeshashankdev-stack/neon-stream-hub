@@ -7,11 +7,30 @@ import ContentCard from "@/components/ContentCard";
 import SkeletonCard from "@/components/SkeletonCard";
 import { useContentList, useGenres } from "@/hooks/useContent";
 
-const years = [2025, 2024, 2023, 2022, 2021, 2020];
-const languages = ["Japanese", "English", "Korean", "Chinese"];
+const years = [2026, 2025, 2024, 2023, 2022, 2021, 2020];
+const languages = ["Japanese", "English", "Korean", "Chinese", "Hindi"];
+
+const categoryTabs = [
+  { label: "All", genre: null, type: null },
+  { label: "Anime", genre: "Anime", type: null },
+  { label: "Cartoon", genre: "Cartoon", type: null },
+  { label: "Series", genre: null, type: "series" },
+  { label: "Movies", genre: null, type: "movie" },
+];
 
 const Search = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlGenre = searchParams.get("genre");
+  const urlType = searchParams.get("type");
+
+  // Find matching tab from URL params
+  const initialTab = categoryTabs.findIndex(
+    (t) =>
+      (t.genre && t.genre.toLowerCase() === urlGenre?.toLowerCase()) ||
+      (t.type && t.type === urlType)
+  );
+
+  const [activeTab, setActiveTab] = useState(initialTab >= 0 ? initialTab : 0);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
@@ -27,7 +46,6 @@ const Search = () => {
     return () => clearTimeout(timer);
   }, [query]);
 
-  // Close suggestions on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (suggestionsRef.current && !suggestionsRef.current.contains(e.target as Node) && e.target !== inputRef.current) {
@@ -38,12 +56,17 @@ const Search = () => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  const tab = categoryTabs[activeTab];
+  const filterGenre = tab.genre || selectedGenre || undefined;
+  const filterType = tab.type || undefined;
+
   const { data: genres } = useGenres();
   const { data: content, isLoading } = useContentList({
     query: debouncedQuery || undefined,
-    genre: selectedGenre || undefined,
+    genre: filterGenre,
     year: selectedYear || undefined,
     language: selectedLang || undefined,
+    type: filterType,
   });
 
   const filtered = content || [];
@@ -56,11 +79,37 @@ const Search = () => {
     setSelectedLang(null);
   };
 
+  const handleTabChange = (idx: number) => {
+    setActiveTab(idx);
+    const t = categoryTabs[idx];
+    const params = new URLSearchParams();
+    if (t.genre) params.set("genre", t.genre);
+    if (t.type) params.set("type", t.type);
+    setSearchParams(params, { replace: true });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="pt-24 pb-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Search input with suggestions */}
+        {/* Category Tabs */}
+        <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
+          {categoryTabs.map((t, idx) => (
+            <button
+              key={t.label}
+              onClick={() => handleTabChange(idx)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                activeTab === idx
+                  ? "bg-primary text-primary-foreground"
+                  : "glass text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Search input */}
         <div className="relative mb-6">
           <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <input
@@ -82,7 +131,6 @@ const Search = () => {
             Filters {activeFilters > 0 && `(${activeFilters})`}
           </button>
 
-          {/* Suggestions dropdown */}
           {showSuggestions && suggestions.length > 0 && (
             <div ref={suggestionsRef} className="absolute top-full left-0 right-0 mt-2 glass-card p-2 z-50 max-h-96 overflow-y-auto">
               {suggestions.map((item) => (
@@ -123,7 +171,7 @@ const Search = () => {
               <div>
                 <label className="text-xs text-muted-foreground mb-2 block">Genre</label>
                 <div className="flex flex-wrap gap-1.5">
-                  {(genres || []).map((g: any) => (
+                  {(genres || []).slice(0, 20).map((g: any) => (
                     <button
                       key={g.id}
                       onClick={() => setSelectedGenre(selectedGenre === g.name ? null : g.name)}
