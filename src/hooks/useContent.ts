@@ -29,8 +29,8 @@ export interface Episode {
   duration_seconds: number | null;
 }
 
-const ANIMESALT_LOGO = "AnimeSaltLong.png";
-const PLACEHOLDER_POSTER = "https://image.tmdb.org/t/p/w500/wwemzKWzjKYJFfCeiB57q3r4Bcm.png";
+const ANIMESALT_LOGO = "";
+const PLACEHOLDER_POSTER = "https://i.pinimg.com/1200x/c2/df/68/c2df689d17ba78f758f39877cbd63f8c.jpg";
 
 function cleanImageUrl(url: string | null): string | null {
   if (!url) return null;

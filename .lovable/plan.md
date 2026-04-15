@@ -10,7 +10,7 @@
 
 3. **Hero section black/empty**: `useFeaturedContent()` queries `featured = true`, but the DB query returns empty -- no content has `featured = true`. Need to update some content rows to `featured = true`, or fall back to showing top-rated content.
 
-4. **All poster_url = AnimeSalt logo**: Every single content row (190 total) has `poster_url` set to `https://animesalt.ac/wp-content/uploads/AnimeSaltLong.png` (the site logo, not actual posters). The `thumbnail_url` field has the same value. We need to use TMDB poster URLs instead. The user's pasted data shows TMDB thumbnails exist (e.g. `https://image.tmdb.org/t/p/w500/...`). We should update the DB to use proper TMDB poster URLs, or at minimum use a placeholder image when the URL is the AnimeSalt logo.
+4. **All poster_url = AnimeSalt logo**: Every single content row (190 total) has `poster_url` set to `https://i.pinimg.com/1200x/c2/df/68/c2df689d17ba78f758f39877cbd63f8c.jpg` (the site logo, not actual posters). The `thumbnail_url` field has the same value. We need to use TMDB poster URLs instead. The user's pasted data shows TMDB thumbnails exist (e.g. `https://image.tmdb.org/t/p/w500/...`). We should update the DB to use proper TMDB poster URLs, or at minimum use a placeholder image when the URL is the AnimeSalt logo.
 
 5. **No filtering by type (Series/Movies/Anime/Cartoon)**: Navbar links to `/search?type=series` and `/search?type=movie`, but `Search.tsx` never reads the `type` param from URL, and `useContentList` has no `type` filter. Also, all 190 items are `type: 'series'` -- there's no `movie` type in DB. The content_type enum likely only has `series` and `movie`. Filtering by genre (Anime, Cartoon, etc.) would be more useful.
 
