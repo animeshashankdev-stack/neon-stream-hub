@@ -1,117 +1,83 @@
 
 
-# Neon Curator: Deployment Ready, Branding, Continue Watching, Keyboard Shortcuts, Admin Panel
+# Fix Video Player, Thumbnails, Hero, Filtering, Seasons, and Layout
 
-## Overview
-Six areas of work: (1) Remove Lovable branding and create a custom logo/favicon, (2) Make Vercel-deploy ready, (3) Add "Continue Watching" section on homepage, (4) Add keyboard shortcuts to video player, (5) Update year to 2026, (6) Build an Admin panel with analytics.
+## Root Cause Analysis
 
----
+1. **Video not playing / "Loading video..."**: The `stream_url` values (e.g. `https://as-cdn21.top/video/...`) are embed page URLs, not direct video files. They don't match `.mp4`/`.m3u8` patterns, so the code falls into `setUseIframe(true)`. But the logic checks `if (!video)` before checking the URL type, which is wrong -- `videoRef.current` exists at that point. The real fix: these URLs are iframe-embeddable pages, so we should always use iframe mode for `as-cdn21.top/video/` URLs and `short.icu` URLs. The `abysscdn.com` URLs are also iframe-embeddable.
 
-## 1 — Remove Lovable Branding + Custom Logo & Favicon
+2. **Ad redirects in iframe**: The embedded player pages contain ad scripts. We need to use `sandbox` attribute on the iframe to restrict popups/redirects while still allowing the video to play.
 
-- Remove `lovable-tagger` plugin from `vite.config.ts`
-- Remove OG image references to `lovable.dev` from `index.html`
-- Create an SVG logo for "Neon Curator" (a stylized "NC" monogram with neon glow) and save as `public/logo.svg`
-- Generate a favicon from the logo and add `<link rel="icon">` to `index.html`
-- Update `Navbar.tsx` to use the SVG logo instead of text-only branding
-- Update `Footer.tsx` to use the logo
-- Update `index.html` OG meta tags to reference the app name and description
+3. **Hero section black/empty**: `useFeaturedContent()` queries `featured = true`, but the DB query returns empty -- no content has `featured = true`. Need to update some content rows to `featured = true`, or fall back to showing top-rated content.
 
-**Files**: `vite.config.ts`, `index.html`, `public/logo.svg`, `src/components/Navbar.tsx`, `src/components/Footer.tsx`
+4. **All poster_url = AnimeSalt logo**: Every single content row (190 total) has `poster_url` set to `https://animesalt.ac/wp-content/uploads/AnimeSaltLong.png` (the site logo, not actual posters). The `thumbnail_url` field has the same value. We need to use TMDB poster URLs instead. The user's pasted data shows TMDB thumbnails exist (e.g. `https://image.tmdb.org/t/p/w500/...`). We should update the DB to use proper TMDB poster URLs, or at minimum use a placeholder image when the URL is the AnimeSalt logo.
 
----
+5. **No filtering by type (Series/Movies/Anime/Cartoon)**: Navbar links to `/search?type=series` and `/search?type=movie`, but `Search.tsx` never reads the `type` param from URL, and `useContentList` has no `type` filter. Also, all 190 items are `type: 'series'` -- there's no `movie` type in DB. The content_type enum likely only has `series` and `movie`. Filtering by genre (Anime, Cartoon, etc.) would be more useful.
 
-## 2 — Vercel Deploy Ready
+6. **Season switching in Watch page**: The Watch page side panel shows all episodes without season grouping. Need to add season tabs/selector.
 
-- Add `vercel.json` with SPA rewrites (`{ "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }] }`)
-- Ensure `package.json` has a `build` script (already has via Vite)
-- No other changes needed — Vite builds to `dist/` which Vercel auto-detects
+7. **Episodes hiding behind video player**: The side panel is `hidden lg:block` and overlaps the video. On smaller screens, episodes are completely hidden. Need a better layout.
 
-**Files**: `vercel.json` (new)
+8. **Quality/Speed/Fullscreen**: Quality selector is cosmetic only (doesn't change the stream). Speed control is missing. Fullscreen targets the container but should work better.
 
 ---
 
-## 3 — Continue Watching Section on Homepage
+## Plan
 
-- Add a "Continue Watching" section in `Index.tsx` between the hero and trending sections
-- Use `useWatchHistory()` to fetch partially watched episodes (where `completed = false` and `progress_seconds > 0`)
-- Show episode thumbnails with a progress bar overlay and a "Resume" button
-- Each card links to `/watch/:contentId/:episodeId`
-- Only visible when user is logged in and has watch history
+### Step 1 — Fix Video Player (iframe mode + ad blocking)
 
-**Files**: `src/pages/Index.tsx`, possibly a new `src/components/ContinueWatchingSection.tsx`
+**File: `src/pages/Watch.tsx`** — Major rewrite:
+- Detect URL type properly: `as-cdn21.top/video/` and `short.icu/` URLs should always use iframe mode
+- Add `sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"` to iframe (blocks popups/redirects/top-navigation from ads)
+- Add playback speed control (0.5x, 1x, 1.25x, 1.5x, 2x) for native video mode
+- Add proper fullscreen for both iframe and native modes
+- Fix layout: move episodes below the video instead of a side panel that hides content. On desktop, use a collapsible side panel that doesn't overlap
+- Add season tabs/selector in the episodes panel so users can switch seasons
+- Show a server selector when multiple servers exist (with language labels)
+- Remove the "Loading video..." stuck state — show it only briefly, then fall back to iframe
 
----
+### Step 2 — Fix Hero Banner (no featured content)
 
-## 4 — Keyboard Shortcuts for Video Player
+**Database update**: Mark 5-6 content items as `featured = true` using the insert tool (UPDATE query).
 
-Add a `useEffect` with `keydown` listener in `Watch.tsx`:
-- **Space**: toggle play/pause
-- **ArrowLeft**: seek -10s
-- **ArrowRight**: seek +10s
-- **F**: toggle fullscreen
-- **M**: toggle mute
+**File: `src/components/HeroBanner.tsx`**: Add fallback — if `featured` returns empty, show top-rated content instead.
 
-Only active when not using iframe mode.
+### Step 3 — Fix Missing Thumbnails
 
-**Files**: `src/pages/Watch.tsx`
+**Database update**: The poster URLs are all the AnimeSalt logo. We need to update them with TMDB poster URLs. I'll update poster_url for all content that has the AnimeSalt logo URL, mapping titles to their TMDB poster images.
 
----
+**File: `src/hooks/useContent.ts`**: Remove the dead `posterMap`/`bannerMap` code (references non-existent local assets). Add a fallback: if poster_url contains "AnimeSaltLong.png", replace with a gradient placeholder or TMDB search.
 
-## 5 — Update Year to 2026
+### Step 4 — Fix Type Filtering (Series/Movies/Anime/Cartoon)
 
-- Change `© 2024` to `© 2026` in `Footer.tsx`
+**File: `src/pages/Search.tsx`**: 
+- Read `type` param from URL search params
+- Add type filter tabs at the top: All, Anime, Series, Movies, Cartoon
+- Filter by genre name for Anime/Cartoon (since `type` column only has series/movie)
+- Pass type filter to `useContentList`
 
-**Files**: `src/components/Footer.tsx`
+**File: `src/hooks/useContent.ts`**: Add `type` filter to `useContentList`.
 
----
+**File: `src/components/Navbar.tsx`**: Update nav links to use genre-based filtering: Anime → `/search?genre=Anime`, Cartoon → `/search?genre=Cartoon`.
 
-## 6 — Admin Panel
+### Step 5 — Fix Watch Page Layout
 
-This is the largest piece. Create an admin dashboard at `/admin` with:
-
-### Database Changes (migration)
-- Create `page_views` table: `id`, `page_path`, `user_agent`, `ip_hash` (text, anonymized), `created_at` (timestamp)
-- RLS: public can INSERT (for tracking), only admin can SELECT
-- Create `user_roles` table following the security guidelines (enum `app_role` with `admin`, `moderator`, `user`)
-- Create `has_role()` security definer function
-- RLS on `page_views` SELECT: only users with `admin` role
-
-### Analytics Tracking
-- Create a `usePageView()` hook that inserts a row into `page_views` on each route change
-- Add it to `App.tsx` so every page navigation is tracked
-
-### Admin Pages
-- `src/pages/Admin.tsx` — Dashboard layout with sidebar navigation
-- **Overview tab**: Daily/weekly/monthly/total page views with charts (using recharts, already available via shadcn chart component)
-- **Users tab**: List all profiles with display name, XP, level, join date, role management
-- **Content tab**: View all content entries with edit capabilities (title, description, featured toggle)
-- **Analytics tab**: Detailed view counts by page, time-series charts
-
-### Admin Access Control
-- Check `has_role(auth.uid(), 'admin')` via an RPC call in a `useIsAdmin()` hook
-- Redirect non-admins away from `/admin`
-- Add admin link in Navbar user dropdown (only visible to admins)
-
-### Route
-- Add `/admin` and `/admin/*` routes to `App.tsx`
-
-**Files**: 
-- New: `src/pages/Admin.tsx`, `src/hooks/usePageView.ts`, `src/hooks/useAdmin.ts`
-- Edit: `src/App.tsx`, `src/components/Navbar.tsx`
-- Migration: `page_views` table, `user_roles` table, `has_role()` function, RLS policies
+**File: `src/pages/Watch.tsx`**:
+- Change from fixed full-screen layout to a proper page layout
+- Video player takes full width at top
+- Episodes list below the video (scrollable, with season tabs)
+- On desktop (lg+), optionally show episodes in a right sidebar that doesn't overlap the video
+- Each episode shows its number, title, and is clearly visible
 
 ---
 
 ## Technical Details
 
-**New files**: `vercel.json`, `public/logo.svg`, `src/pages/Admin.tsx`, `src/hooks/usePageView.ts`, `src/hooks/useAdmin.ts`, `src/components/ContinueWatchingSection.tsx`
+**Files to edit**: `src/pages/Watch.tsx`, `src/components/HeroBanner.tsx`, `src/hooks/useContent.ts`, `src/pages/Search.tsx`, `src/components/Navbar.tsx`
 
-**Edited files**: `vite.config.ts`, `index.html`, `src/App.tsx`, `src/pages/Index.tsx`, `src/pages/Watch.tsx`, `src/components/Navbar.tsx`, `src/components/Footer.tsx`
+**Database updates (via insert tool)**:
+- UPDATE content SET featured = true WHERE id IN (...) — for 5 titles
+- UPDATE content SET poster_url = CASE ... for titles where we can map TMDB URLs
 
-**New dependency**: None (recharts already available via shadcn chart)
-
-**Database migration**: Create `page_views`, `user_roles` tables, `app_role` enum, `has_role()` function, and associated RLS policies
-
-**Note**: After creating the admin infrastructure, you'll need to manually assign yourself the `admin` role by inserting a row into `user_roles` via the Supabase dashboard.
+**No schema changes needed.**
 
