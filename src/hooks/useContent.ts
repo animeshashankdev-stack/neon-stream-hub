@@ -29,41 +29,21 @@ export interface Episode {
   duration_seconds: number | null;
 }
 
-const posterMap: Record<string, string> = {
-  "Void Horizon": "/src/assets/poster-void-horizon.jpg",
-  "Ethereal Bloom": "/src/assets/poster-ethereal-bloom.jpg",
-  "Scarlet Night": "/src/assets/poster-scarlet-night.jpg",
-  "Cyber Pulse": "/src/assets/poster-cyber-pulse.jpg",
-  "Frost Heart": "/src/assets/poster-frost-heart.jpg",
-  "Storm Soul": "/src/assets/poster-storm-soul.jpg",
-  "Whisper of Zen": "/src/assets/poster-whisper-zen.jpg",
-  "Hyper Rails": "/src/assets/poster-hyper-rails.jpg",
-  "Skybound Realm": "/src/assets/poster-skybound-realm.jpg",
-  "Silent Peak": "/src/assets/poster-silent-peak.jpg",
-  "Dream Weaver": "/src/assets/poster-dream-weaver.jpg",
-  "Neon Drifters": "/src/assets/poster-neon-drifters.jpg",
-};
+const ANIMESALT_LOGO = "AnimeSaltLong.png";
+const PLACEHOLDER_POSTER = "https://image.tmdb.org/t/p/w500/wwemzKWzjKYJFfCeiB57q3r4Bcm.png";
 
-const bannerMap: Record<string, string> = {
-  "Void Horizon": "/src/assets/hero-chrono-pulse.jpg",
-  "Ethereal Bloom": "/src/assets/poster-ethereal-bloom.jpg",
-  "Scarlet Night": "/src/assets/poster-scarlet-night.jpg",
-  "Cyber Pulse": "/src/assets/poster-cyber-pulse.jpg",
-  "Frost Heart": "/src/assets/poster-frost-heart.jpg",
-  "Storm Soul": "/src/assets/poster-storm-soul.jpg",
-  "Whisper of Zen": "/src/assets/poster-whisper-zen.jpg",
-  "Hyper Rails": "/src/assets/poster-hyper-rails.jpg",
-  "Skybound Realm": "/src/assets/poster-skybound-realm.jpg",
-  "Silent Peak": "/src/assets/poster-silent-peak.jpg",
-  "Dream Weaver": "/src/assets/poster-dream-weaver.jpg",
-  "Neon Drifters": "/src/assets/poster-neon-drifters.jpg",
-};
+function cleanImageUrl(url: string | null): string | null {
+  if (!url) return null;
+  if (url.includes(ANIMESALT_LOGO)) return null;
+  return url;
+}
 
 function resolveImages(item: ContentItem): ContentItem {
   return {
     ...item,
-    poster_url: posterMap[item.title] || item.poster_url,
-    banner_url: bannerMap[item.title] || item.banner_url,
+    poster_url: cleanImageUrl(item.poster_url) || PLACEHOLDER_POSTER,
+    banner_url: cleanImageUrl(item.banner_url) || cleanImageUrl(item.poster_url) || PLACEHOLDER_POSTER,
+    thumbnail_url: cleanImageUrl(item.thumbnail_url) || cleanImageUrl(item.poster_url) || PLACEHOLDER_POSTER,
   };
 }
 
@@ -96,6 +76,7 @@ export function useContentList(filters?: {
   genre?: string;
   year?: number;
   language?: string;
+  type?: string;
 }) {
   return useQuery({
     queryKey: ["content", "list", filters],
@@ -104,11 +85,14 @@ export function useContentList(filters?: {
       if (filters?.query) q = q.ilike("title", `%${filters.query}%`);
       if (filters?.year) q = q.eq("release_year", filters.year);
       if (filters?.language) q = q.eq("language", filters.language);
+      if (filters?.type && (filters.type === "movie" || filters.type === "series")) {
+        q = q.eq("type", filters.type);
+      }
 
       let items = await fetchContentWithGenres(q);
 
       if (filters?.genre) {
-        items = items.filter((i) => i.genres?.includes(filters.genre!));
+        items = items.filter((i) => i.genres?.some((g) => g.toLowerCase() === filters.genre!.toLowerCase()));
       }
       return items;
     },
@@ -118,10 +102,19 @@ export function useContentList(filters?: {
 export function useFeaturedContent() {
   return useQuery({
     queryKey: ["content", "featured"],
-    queryFn: () =>
-      fetchContentWithGenres(
+    queryFn: async () => {
+      // Try featured first
+      let items = await fetchContentWithGenres(
         supabase.from("content").select("*").eq("featured", true).order("rating", { ascending: false })
-      ),
+      );
+      // Fallback to top-rated if none featured
+      if (items.length === 0) {
+        items = await fetchContentWithGenres(
+          supabase.from("content").select("*").order("rating", { ascending: false }).limit(5)
+        );
+      }
+      return items;
+    },
   });
 }
 

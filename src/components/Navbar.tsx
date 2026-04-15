@@ -6,7 +6,8 @@ import { useIsAdmin } from "@/hooks/useAdmin";
 
 const navLinks = [
   { label: "Home", to: "/" },
-  { label: "Genres", to: "/genres" },
+  { label: "Anime", to: "/search?genre=Anime" },
+  { label: "Cartoon", to: "/search?genre=Cartoon" },
   { label: "Series", to: "/search?type=series" },
   { label: "Movies", to: "/search?type=movie" },
 ];
