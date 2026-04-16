@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Play, Plus, Check, Star, Clock, Calendar, Globe, ChevronRight } from "lucide-react";
+import { Play, Plus, Check, Star, Clock, Calendar, Globe, ChevronDown, Share2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ContentCard from "@/components/ContentCard";
-import SkeletonCard from "@/components/SkeletonCard";
 import { useContentDetail, useEpisodes, useRecommendations } from "@/hooks/useContent";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsInWatchlist, useToggleWatchlist } from "@/hooks/useWatchlist";
+import { Badge } from "@/components/ui/badge";
 
 const formatDuration = (seconds: number) => {
   const m = Math.floor(seconds / 60);
@@ -31,167 +31,244 @@ const ContentDetail = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-gradient-to-br from-[#0D0A2A] to-[#1A0F3E]">
         <Navbar />
-        <div className="h-[70vh] bg-secondary animate-pulse" />
+        <div className="h-[65vh] bg-white/5 animate-pulse" />
       </div>
     );
   }
 
   if (!content) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-gradient-to-br from-[#0D0A2A] to-[#1A0F3E] text-white">
         <Navbar />
         <div className="pt-24 text-center">
-          <p className="text-muted-foreground">Content not found.</p>
+          <p className="text-white/50">Content not found.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-[#0D0A2A] to-[#1A0F3E] text-white pb-24">
       <Navbar />
 
-      {/* Banner */}
-      <div className="relative h-[70vh] min-h-[500px]">
-        <img
-          src={content.banner_url || content.poster_url || ""}
-          alt={content.title}
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/30 to-transparent" />
+      {/* Hero Banner */}
+      <div className="relative w-full h-[65vh] min-h-[450px] flex pt-16 z-10">
+        {/* Left Art Area */}
+        <div className="w-1/2 h-full relative overflow-hidden hidden md:flex items-end">
+          <img
+            src={content.banner_url || content.poster_url || ""}
+            alt={content.title}
+            className="absolute inset-0 w-full h-full object-cover opacity-40"
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#0D0A2A] via-[#0D0A2A]/60 to-transparent z-10" />
+          <div className="absolute right-0 top-0 w-32 h-full bg-gradient-to-l from-[#0D0A2A] to-transparent z-20" />
+        </div>
 
-        <div className="absolute bottom-0 left-0 right-0 pb-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-          <div className="flex gap-6 items-end">
-            <div className="hidden sm:block flex-shrink-0 w-48 rounded-xl overflow-hidden shadow-[0_0_40px_hsl(265_90%_60%/0.3)]">
-              <img src={content.poster_url || ""} alt={content.title} className="w-full aspect-[2/3] object-cover" />
+        {/* Right Content Box */}
+        <div className="w-full md:w-1/2 h-full flex items-center justify-center p-6 md:p-8 relative z-20">
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[28px] p-6 md:p-8 w-full max-w-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3),inset_0_0_20px_rgba(255,255,255,0.05)] relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-teal-500/20 to-transparent rounded-bl-full pointer-events-none" />
+
+            <h1 className="font-display font-black text-3xl lg:text-4xl text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-cyan-400 uppercase tracking-tight mb-2">
+              {content.title}
+            </h1>
+
+            {/* Rating */}
+            {content.rating && (
+              <div className="flex items-center gap-1 text-yellow-400 mb-4">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Star key={i} className={`w-4 h-4 ${i <= Math.round(content.rating! / 2) ? "fill-current" : "opacity-30"}`} />
+                ))}
+                <span className="font-bold text-white ml-2 text-lg">{content.rating}</span>
+              </div>
+            )}
+
+            {/* Genres */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              {content.genres?.map((g) => (
+                <Badge key={g} variant="outline" className="rounded-full bg-white/10 border-white/20 px-4 py-1.5 text-xs font-medium text-white shadow-sm">
+                  {g}
+                </Badge>
+              ))}
             </div>
 
-            <div className="flex-1 pb-2">
-              <div className="flex items-center gap-2 mb-2 flex-wrap">
-                {content.genres?.map((g) => (
-                  <span key={g} className="px-2.5 py-0.5 rounded-md bg-primary/20 text-primary text-xs font-semibold">{g}</span>
-                ))}
-              </div>
-              <h1 className="font-display font-extrabold text-3xl sm:text-5xl mb-3">{content.title}</h1>
+            {/* Meta */}
+            <div className="flex items-center gap-3 text-xs text-white/60 mb-4 flex-wrap">
+              {content.release_year && <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {content.release_year}</span>}
+              {content.duration_minutes && <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {content.duration_minutes}min</span>}
+              {content.language && <span className="flex items-center gap-1"><Globe className="w-3.5 h-3.5" /> {content.language}</span>}
+              {content.status && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-400/20 text-teal-400 uppercase">{content.status}</span>
+              )}
+            </div>
 
-              <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4 flex-wrap">
-                {content.rating && (
-                  <span className="flex items-center gap-1 text-accent font-semibold">
-                    <Star className="w-4 h-4 fill-current" /> {content.rating}
-                  </span>
-                )}
-                {content.release_year && (
-                  <span className="flex items-center gap-1"><Calendar className="w-4 h-4" /> {content.release_year}</span>
-                )}
-                {content.duration_minutes && (
-                  <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {content.duration_minutes} min{content.type === "series" ? "/ep" : ""}</span>
-                )}
-                {content.language && (
-                  <span className="flex items-center gap-1"><Globe className="w-4 h-4" /> {content.language}</span>
-                )}
-                {content.status && (
-                  <span className="px-2 py-0.5 rounded text-xs font-semibold bg-accent/20 text-accent uppercase">{content.status}</span>
-                )}
-              </div>
+            <p className="text-white/70 text-sm leading-relaxed mb-6 max-w-lg line-clamp-3">
+              {content.description}
+            </p>
 
-              <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed mb-5 line-clamp-3">{content.description}</p>
-
-              <div className="flex items-center gap-3">
-                {firstEpisode && (
-                  <Link
-                    to={`/watch/${content.id}/${firstEpisode.id}`}
-                    className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-display font-bold text-sm hover:bg-primary/90 transition-colors neon-glow-purple"
-                  >
-                    <Play className="w-4 h-4 fill-current" /> Play Now
-                  </Link>
-                )}
-                {user && (
-                  <button
-                    onClick={() => toggleWatchlist.mutate(content.id)}
-                    className="flex items-center gap-2 px-5 py-3 rounded-xl glass text-foreground font-display font-semibold text-sm hover:bg-secondary/50 transition-colors"
-                  >
-                    {isInWatchlist ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                    {isInWatchlist ? "In Watchlist" : "Watchlist"}
-                  </button>
-                )}
-              </div>
+            {/* Actions */}
+            <div className="flex flex-wrap items-center gap-3">
+              {firstEpisode && (
+                <Link
+                  to={`/watch/${content.id}/${firstEpisode.id}`}
+                  className="rounded-full bg-gradient-to-r from-teal-400 to-cyan-500 text-black font-bold px-8 py-3 shadow-[0_0_20px_rgba(45,212,191,0.4)] hover:shadow-[0_0_30px_rgba(45,212,191,0.6)] transition-all flex items-center gap-2 text-sm"
+                >
+                  <Play className="w-4 h-4 fill-current" /> Play Episode 1
+                </Link>
+              )}
+              {user && (
+                <button
+                  onClick={() => toggleWatchlist.mutate(content.id)}
+                  className="rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white font-semibold px-6 py-3 hover:bg-white/20 transition-all flex items-center gap-2 text-sm"
+                >
+                  {isInWatchlist ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                  {isInWatchlist ? "In Watchlist" : "Watchlist"}
+                </button>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Episodes */}
-      {content.type === "series" && filteredEpisodes.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="font-display font-bold text-xl">Episodes</h2>
-            {seasons.length > 1 && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">Season</span>
-                <select
-                  value={selectedSeason}
-                  onChange={(e) => setSelectedSeason(Number(e.target.value))}
-                  className="glass rounded-lg px-3 py-1.5 text-sm text-foreground bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+      {/* Episodes & Sidebar */}
+      <div className="max-w-7xl mx-auto px-6 mt-8 flex flex-col lg:flex-row gap-12 relative z-20">
+        {/* Episodes */}
+        {content.type === "series" && filteredEpisodes.length > 0 && (
+          <div className="flex-1">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <div className="w-1.5 h-6 rounded-full bg-gradient-to-b from-teal-400 to-cyan-500" />
+                <h3 className="text-2xl font-display font-bold tracking-tight">Episodes</h3>
+              </div>
+              {seasons.length > 1 && (
+                <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+                  {seasons.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setSelectedSeason(s)}
+                      className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border ${
+                        selectedSeason === s
+                          ? "bg-teal-400/20 text-teal-400 border-teal-400/30 shadow-[0_0_10px_rgba(45,212,191,0.3)]"
+                          : "bg-white/5 text-white/60 border-white/10 hover:bg-white/10"
+                      }`}
+                    >
+                      Season {s}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              {filteredEpisodes.map((ep, idx) => (
+                <Link
+                  key={ep.id}
+                  to={`/watch/${content.id}/${ep.id}`}
+                  className="group flex flex-col sm:flex-row gap-4 p-4 rounded-[16px] bg-white/5 border border-white/10 hover:border-violet-400/40 hover:shadow-[0_0_15px_rgba(167,139,250,0.2)] transition-all cursor-pointer items-center"
                 >
-                  {seasons.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
+                  <div className="relative w-full sm:w-36 aspect-video rounded-[12px] bg-gradient-to-br from-slate-800 to-slate-950 overflow-hidden shrink-0">
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="font-black text-3xl text-white/20 group-hover:text-white/40 transition-colors">{String(ep.episode_number).padStart(2, "0")}</span>
+                    </div>
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 backdrop-blur-[2px] flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur border border-white/30 flex items-center justify-center">
+                        <Play className="w-4 h-4 text-white fill-current ml-0.5" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col justify-center flex-1 min-w-0 py-1">
+                    <div className="flex items-center justify-between gap-4 mb-1">
+                      <h4 className="text-base font-bold text-white group-hover:text-violet-300 transition-colors truncate">
+                        {ep.title || `Episode ${ep.episode_number}`}
+                      </h4>
+                      {ep.duration_seconds && (
+                        <Badge variant="outline" className="rounded-full bg-white/10 border-none text-[10px] text-white/70 px-2 shrink-0">
+                          {formatDuration(ep.duration_seconds)}
+                        </Badge>
+                      )}
+                    </div>
+                    {ep.description && <p className="text-white/60 text-xs leading-relaxed line-clamp-2">{ep.description}</p>}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Sidebar: Recommendations */}
+        {recommendations && recommendations.length > 0 && (
+          <div className="w-full lg:w-[320px] shrink-0 space-y-6">
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[24px] p-6 shadow-lg">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-1 h-5 rounded-full bg-gradient-to-b from-orange-400 to-yellow-400" />
+                <h4 className="font-display font-bold text-lg">More Like This</h4>
+              </div>
+              <div className="space-y-4">
+                {recommendations.slice(0, 6).map((item) => (
+                  <Link key={item.id} to={`/content/${item.id}`} className="flex gap-4 items-center group cursor-pointer">
+                    <div className="w-14 aspect-[2/3] rounded-[10px] bg-gradient-to-br from-slate-800 to-slate-950 overflow-hidden shrink-0 border border-white/10 group-hover:border-teal-400/50 transition-colors">
+                      <img src={item.poster_url || ""} alt={item.title} className="w-full h-full object-cover" loading="lazy" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h5 className="font-bold text-sm text-white group-hover:text-teal-300 transition-colors line-clamp-1 mb-1">{item.title}</h5>
+                      {item.rating && (
+                        <div className="flex items-center gap-1 text-[10px] text-yellow-400">
+                          <Star className="w-3 h-3 fill-current" /> {item.rating}
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* About card */}
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[24px] p-6 shadow-lg">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-1 h-5 rounded-full bg-gradient-to-b from-teal-400 to-cyan-500" />
+                <h4 className="font-display font-bold text-lg">About</h4>
+              </div>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between border-b border-white/5 pb-2">
+                  <span className="text-white/50 font-medium">Type</span>
+                  <span className="font-bold text-white capitalize">{content.type}</span>
+                </div>
+                {content.status && (
+                  <div className="flex justify-between border-b border-white/5 pb-2">
+                    <span className="text-white/50 font-medium">Status</span>
+                    <span className="font-bold text-white capitalize">{content.status}</span>
+                  </div>
+                )}
+                {content.language && (
+                  <div className="flex justify-between pb-2">
+                    <span className="text-white/50 font-medium">Language</span>
+                    <span className="font-bold text-white">{content.language}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Tags */}
+            {content.genres && content.genres.length > 0 && (
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[24px] p-6 shadow-lg">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-1 h-5 rounded-full bg-gradient-to-b from-pink-400 to-rose-400" />
+                  <h4 className="font-display font-bold text-lg">Tags</h4>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {content.genres.map((tag) => (
+                    <Badge key={tag} variant="outline" className="rounded-full bg-teal-400/10 border-teal-400/30 text-teal-300 font-medium text-xs px-3 py-1">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             )}
           </div>
-
-          <div className="space-y-2">
-            {filteredEpisodes.map((ep, idx) => (
-              <Link
-                key={ep.id}
-                to={`/watch/${content.id}/${ep.id}`}
-                className={`flex items-center gap-4 p-3 rounded-xl transition-colors group ${
-                  idx === 0 ? "glass shadow-[0_0_20px_hsl(265_90%_60%/0.15)]" : "hover:bg-secondary/50"
-                }`}
-              >
-                <div className="relative w-28 sm:w-36 aspect-video rounded-lg overflow-hidden flex-shrink-0 bg-secondary">
-                  <div className="absolute inset-0 flex items-center justify-center bg-background/30 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Play className="w-6 h-6 text-foreground fill-current" />
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    {idx === 0 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary font-bold">New</span>}
-                  </div>
-                  <p className="text-sm font-display font-semibold truncate">
-                    {String(ep.episode_number).padStart(2, "0")}. {ep.title}
-                  </p>
-                  {ep.description && <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{ep.description}</p>}
-                  {ep.duration_seconds && <p className="text-xs text-muted-foreground mt-0.5">{formatDuration(ep.duration_seconds)}</p>}
-                </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Recommendations */}
-      {recommendations && recommendations.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10">
-          <h2 className="font-display font-bold text-xl mb-5">You Might Also Like</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {recommendations.map((item) => (
-              <Link key={item.id} to={`/content/${item.id}`}>
-                <ContentCard
-                  image={item.poster_url || ""}
-                  title={item.title}
-                  subtitle={item.genres?.join(" • ") || ""}
-                  rating={item.rating}
-                  className="w-full"
-                />
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+        )}
+      </div>
 
       <Footer />
     </div>
