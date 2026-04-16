@@ -1,19 +1,21 @@
 import { Link } from "react-router-dom";
-import { Star } from "lucide-react";
+import { Star, Play } from "lucide-react";
 import { useContentList } from "@/hooks/useContent";
 import SkeletonCard from "./SkeletonCard";
 
 const RecommendedSection = () => {
   const { data: content, isLoading } = useContentList();
-  // Show the lower-rated ones as "recommended"
-  const items = (content || []).slice(4, 8);
+  const items = (content || []).slice(4, 10);
 
   if (isLoading) {
     return (
       <section className="py-12 px-6 sm:px-12 lg:px-20">
-        <h2 className="font-display font-bold text-xl mb-6">Recommended For You</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} className="w-full" />)}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-1.5 h-7 rounded-full bg-gradient-to-b from-orange-400 to-yellow-500" />
+          <h2 className="text-2xl font-display font-black tracking-tight text-white">New & Hot</h2>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => <SkeletonCard key={i} className="w-full" />)}
         </div>
       </section>
     );
@@ -23,31 +25,36 @@ const RecommendedSection = () => {
 
   return (
     <section className="py-12 px-6 sm:px-12 lg:px-20">
-      <h2 className="font-display font-bold text-xl mb-6">Recommended For You</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-1.5 h-7 rounded-full bg-gradient-to-b from-orange-400 to-yellow-500 shadow-[0_0_10px_rgba(251,146,60,0.5)]" />
+        <h2 className="text-2xl font-display font-black tracking-tight text-white">New & Hot</h2>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
         {items.map((item) => (
           <Link
             key={item.id}
             to={`/content/${item.id}`}
-            className="group glass-card rounded-xl overflow-hidden cursor-pointer hover:shadow-[0_0_30px_hsl(265_90%_60%/0.15)] transition-all duration-300"
+            className="group relative rounded-[20px] overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 hover:border-orange-400/50 hover:shadow-[0_0_20px_rgba(251,146,60,0.15)] transition-all cursor-pointer"
           >
-            <div className="relative aspect-[2/3] overflow-hidden">
+            <div className="h-[140px] relative overflow-hidden bg-gradient-to-br from-slate-800 to-slate-950">
               <img
                 src={item.poster_url || ""}
                 alt={item.title}
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 loading="lazy"
               />
-              {item.rating && (
-                <div className="absolute top-3 left-3 flex items-center gap-1 px-2 py-0.5 rounded-md bg-background/60 backdrop-blur-sm">
-                  <Star className="w-3 h-3 text-accent fill-current" />
-                  <span className="text-[10px] font-bold text-accent">{item.rating}</span>
+              <div className="absolute top-2 right-2 bg-pink-500 text-white rounded-full px-2 py-0.5 text-[9px] font-black tracking-wider uppercase shadow-[0_0_10px_rgba(244,114,182,0.6)]">
+                NEW
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
+                <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur border border-white/30 flex items-center justify-center">
+                  <Play className="w-4 h-4 text-white fill-current ml-0.5" />
                 </div>
-              )}
+              </div>
             </div>
             <div className="p-3">
-              <h3 className="font-display font-semibold text-sm mb-1 truncate">{item.title}</h3>
-              <p className="text-[10px] text-muted-foreground">{item.genres?.join(" • ")}</p>
+              <h3 className="font-bold text-white text-sm truncate mb-1">{item.title}</h3>
+              <p className="text-xs text-white/50 font-medium">{item.genres?.join(" • ")}</p>
             </div>
           </Link>
         ))}
