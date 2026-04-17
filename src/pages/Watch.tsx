@@ -46,6 +46,9 @@ const Watch = () => {
   const [showServerMenu, setShowServerMenu] = useState(false);
   const [selectedServerIdx, setSelectedServerIdx] = useState(0);
   const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
+  const [selectedLang, setSelectedLang] = useState<string | null>(null);
+  const [showLangMenu, setShowLangMenu] = useState(false);
+  const [iframeError, setIframeError] = useState(false);
 
   const epList = episodes || [];
   const currentEpIdx = epList.findIndex((e) => e.id === episodeId);
@@ -65,10 +68,28 @@ const Watch = () => {
   }, [epList, selectedSeason]);
 
   const serverList = servers || [];
-  const activeServer = serverList[selectedServerIdx] || serverList[0];
+  const languages = useMemo(
+    () => [...new Set(serverList.map((s) => s.language).filter(Boolean))],
+    [serverList]
+  );
+  // pick default language once servers load
+  useEffect(() => {
+    if (!selectedLang && languages.length) setSelectedLang(languages[0]);
+  }, [languages, selectedLang]);
+
+  const langServers = useMemo(
+    () => (selectedLang ? serverList.filter((s) => s.language === selectedLang) : serverList),
+    [serverList, selectedLang]
+  );
+  const activeServer = langServers[selectedServerIdx] || langServers[0];
   const rawUrl = activeServer?.stream_url || "";
   const streamUrl = resolveStreamUrl(rawUrl);
   const useIframe = isEmbedUrl(streamUrl);
+
+  // reset error when switching server / episode
+  useEffect(() => { setIframeError(false); }, [streamUrl, episodeId]);
+  // reset server idx when language changes
+  useEffect(() => { setSelectedServerIdx(0); }, [selectedLang, episodeId]);
 
   useEffect(() => {
     if (useIframe || !streamUrl) return;
