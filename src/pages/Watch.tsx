@@ -306,6 +306,28 @@ const Watch = () => {
             playsInline
             onClick={togglePlay}
           />
+        ) : null}
+
+        {/* Unsafe-mode ad warning banner */}
+        {useIframe && streamUrl && !iframeError && iframeMode === "unsafe" && (
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-40 max-w-[92%] px-4 py-2 rounded-full bg-red-500/90 backdrop-blur-md text-white text-[11px] sm:text-xs font-bold flex items-center gap-2 shadow-[0_10px_30px_rgba(239,68,68,0.4)] border border-red-300/30">
+            <span>⚠ Ads may appear — this provider requires it to play.</span>
+            <button
+              onClick={backToSafeMode}
+              className="ml-1 px-2 py-0.5 rounded-full bg-white/20 hover:bg-white/30 transition-colors text-[10px] uppercase tracking-wider whitespace-nowrap"
+            >
+              Safe mode
+            </button>
+          </div>
+        )}
+
+        {/* Empty placeholder fallback */}
+        {!streamUrl && (
+            ref={videoRef}
+            className="absolute inset-0 w-full h-full object-contain bg-black z-0"
+            playsInline
+            onClick={togglePlay}
+          />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center z-0 px-6">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-black" />
@@ -408,7 +430,13 @@ const Watch = () => {
                     {langServers.map((srv, idx) => (
                       <button
                         key={srv.id}
-                        onClick={() => { setSelectedServerIdx(idx); setShowServerMenu(false); }}
+                        onClick={() => {
+                          setSelectedServerIdx(idx);
+                          setIframeMode("sandboxed");
+                          setIframeError(false);
+                          setIframeKey((k) => k + 1);
+                          setShowServerMenu(false);
+                        }}
                         className={`block w-full text-left px-4 py-2.5 rounded-xl text-xs transition-colors font-medium ${
                           idx === selectedServerIdx ? "bg-accent/20 text-accent" : "text-white/70 hover:text-white hover:bg-white/10"
                         }`}
