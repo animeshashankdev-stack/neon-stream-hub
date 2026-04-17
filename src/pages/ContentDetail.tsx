@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Play, Plus, Check, Star, Clock, Calendar, Globe, ChevronDown, Share2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
@@ -33,10 +33,10 @@ const ContentDetail = () => {
   // Language options derived from content + a sane default list
   const languageOptions = [content?.language, "English (Dub)", "Japanese (Sub)", "Spanish", "Hindi"]
     .filter((v, i, a): v is string => !!v && a.indexOf(v) === i);
-  if (!selectedLang && languageOptions[0]) {
-    // initialize without re-render churn
-    setTimeout(() => setSelectedLang(languageOptions[0]), 0);
-  }
+
+  useEffect(() => {
+    if (!selectedLang && languageOptions[0]) setSelectedLang(languageOptions[0]);
+  }, [languageOptions, selectedLang]);
 
   if (isLoading) {
     return (
