@@ -322,13 +322,7 @@ const Watch = () => {
         )}
 
         {/* Empty placeholder fallback */}
-        {!streamUrl && (
-            ref={videoRef}
-            className="absolute inset-0 w-full h-full object-contain bg-black z-0"
-            playsInline
-            onClick={togglePlay}
-          />
-        ) : (
+        {(!streamUrl || iframeError) && (
           <div className="absolute inset-0 flex items-center justify-center z-0 px-6">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-black" />
             <div className="z-10 text-center flex flex-col items-center max-w-md">
@@ -336,11 +330,11 @@ const Watch = () => {
                 <Server className="w-8 h-8 md:w-10 md:h-10 text-white/60" />
               </div>
               <p className="font-mono text-[11px] md:text-xs tracking-[0.2em] text-white/60 uppercase font-bold mb-2">
-                {servers === undefined ? "Loading server…" : iframeError ? "Server blocked playback" : "No server available"}
+                {servers === undefined ? "Loading server…" : iframeError ? "All servers blocked" : "No server available"}
               </p>
               <p className="text-white/50 text-xs md:text-sm leading-relaxed mb-5">
                 {iframeError
-                  ? "This source tried to redirect to ads. Try another server below."
+                  ? "Every source either timed out or required ads. Pick one below to retry."
                   : serverList.length === 0
                     ? "We couldn't find a working source for this episode yet. Pick another episode or check back soon."
                     : "Pick a different language or server."}
@@ -350,7 +344,12 @@ const Watch = () => {
                   {langServers.map((srv, idx) => (
                     <button
                       key={srv.id}
-                      onClick={() => { setSelectedServerIdx(idx); setIframeError(false); }}
+                      onClick={() => {
+                        setSelectedServerIdx(idx);
+                        setIframeMode("sandboxed");
+                        setIframeError(false);
+                        setIframeKey((k) => k + 1);
+                      }}
                       className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition-all ${
                         idx === selectedServerIdx
                           ? "bg-accent/20 text-accent border-accent/40"
