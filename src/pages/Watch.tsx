@@ -216,7 +216,7 @@ const Watch = () => {
       {/* Video Player Area */}
       <div
         ref={containerRef}
-        className="relative w-full h-[58vh] bg-black flex flex-col justify-center items-center group cursor-pointer overflow-hidden border-b border-white/5 shrink-0"
+        className="relative w-full aspect-video md:aspect-auto md:h-[58vh] bg-black flex flex-col justify-center items-center group cursor-pointer overflow-hidden border-b border-white/5 shrink-0"
         onMouseMove={handleMouseMove}
         onMouseEnter={() => setShowControls(true)}
       >

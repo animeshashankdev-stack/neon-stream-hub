@@ -18,6 +18,7 @@ const formatDuration = (seconds: number) => {
 const ContentDetail = () => {
   const { id } = useParams();
   const [selectedSeason, setSelectedSeason] = useState(1);
+  const [selectedLang, setSelectedLang] = useState<string>("");
   const { data: content, isLoading } = useContentDetail(id);
   const { data: episodes } = useEpisodes(id);
   const { data: recommendations } = useRecommendations(id);
@@ -28,6 +29,14 @@ const ContentDetail = () => {
   const seasons = [...new Set(episodes?.map((e) => e.season_number) || [1])];
   const filteredEpisodes = episodes?.filter((e) => e.season_number === selectedSeason) || [];
   const firstEpisode = filteredEpisodes[0];
+
+  // Language options derived from content + a sane default list
+  const languageOptions = [content?.language, "English (Dub)", "Japanese (Sub)", "Spanish", "Hindi"]
+    .filter((v, i, a): v is string => !!v && a.indexOf(v) === i);
+  if (!selectedLang && languageOptions[0]) {
+    // initialize without re-render churn
+    setTimeout(() => setSelectedLang(languageOptions[0]), 0);
+  }
 
   if (isLoading) {
     return (
