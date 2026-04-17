@@ -296,21 +296,49 @@ const Watch = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Server selector */}
-            {serverList.length > 1 && (
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            {/* Language selector */}
+            {languages.length > 1 && (
               <div className="relative">
                 <button
-                  onClick={() => setShowServerMenu(!showServerMenu)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs text-white/70 hover:text-white bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 transition-colors font-medium"
+                  onClick={() => { setShowLangMenu(!showLangMenu); setShowServerMenu(false); }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs text-white/80 hover:text-white bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 transition-colors font-medium"
+                >
+                  🌐 <span className="hidden sm:inline">{selectedLang}</span>
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+                {showLangMenu && (
+                  <div className="absolute right-0 top-full mt-2 w-44 bg-black/90 backdrop-blur-2xl border border-white/10 rounded-2xl p-2 z-50 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                    {languages.map((lng) => (
+                      <button
+                        key={lng}
+                        onClick={() => { setSelectedLang(lng); setShowLangMenu(false); }}
+                        className={`block w-full text-left px-4 py-2.5 rounded-xl text-xs font-medium transition-colors ${
+                          lng === selectedLang ? "bg-accent/20 text-accent" : "text-white/70 hover:text-white hover:bg-white/10"
+                        }`}
+                      >
+                        {lng}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Server selector */}
+            {langServers.length > 1 && (
+              <div className="relative">
+                <button
+                  onClick={() => { setShowServerMenu(!showServerMenu); setShowLangMenu(false); }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs text-white/80 hover:text-white bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 transition-colors font-medium"
                 >
                   <Server className="w-3.5 h-3.5" />
-                  {activeServer?.server_name || `Server ${selectedServerIdx + 1}`}
+                  <span className="hidden sm:inline">{activeServer?.server_name || `Server ${selectedServerIdx + 1}`}</span>
                   <ChevronDown className="w-3 h-3" />
                 </button>
                 {showServerMenu && (
                   <div className="absolute right-0 top-full mt-2 w-56 bg-black/90 backdrop-blur-2xl border border-white/10 rounded-2xl p-2 z-50 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-                    {serverList.map((srv, idx) => (
+                    {langServers.map((srv, idx) => (
                       <button
                         key={srv.id}
                         onClick={() => { setSelectedServerIdx(idx); setShowServerMenu(false); }}
@@ -318,7 +346,7 @@ const Watch = () => {
                           idx === selectedServerIdx ? "bg-accent/20 text-accent" : "text-white/70 hover:text-white hover:bg-white/10"
                         }`}
                       >
-                        {srv.server_name} • {srv.language} • {srv.quality}
+                        {srv.server_name} • {srv.quality}
                       </button>
                     ))}
                   </div>
