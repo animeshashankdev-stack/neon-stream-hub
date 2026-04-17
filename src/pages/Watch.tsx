@@ -221,15 +221,18 @@ const Watch = () => {
         onMouseEnter={() => setShowControls(true)}
       >
         {/* Video or Iframe */}
-        {useIframe && streamUrl ? (
+        {useIframe && streamUrl && !iframeError ? (
           <iframe
             src={streamUrl}
             className="absolute inset-0 w-full h-full z-0"
             allowFullScreen
-            allow="autoplay; encrypted-media; fullscreen"
+            allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+            sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
+            referrerPolicy="no-referrer"
+            onError={() => setIframeError(true)}
             frameBorder="0"
           />
-        ) : streamUrl ? (
+        ) : !useIframe && streamUrl ? (
           <video
             ref={videoRef}
             className="absolute inset-0 w-full h-full object-contain bg-black z-0"
@@ -237,15 +240,39 @@ const Watch = () => {
             onClick={togglePlay}
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center z-0">
+          <div className="absolute inset-0 flex items-center justify-center z-0 px-6">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-black" />
-            <div className="z-10 text-center flex flex-col items-center opacity-60">
-              <div className="w-24 h-24 rounded-full border border-white/20 flex items-center justify-center mb-6 backdrop-blur-xl bg-white/10 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-                <Play className="w-10 h-10 ml-2 text-white" />
+            <div className="z-10 text-center flex flex-col items-center max-w-md">
+              <div className="w-20 h-20 md:w-24 md:h-24 rounded-full border border-white/10 flex items-center justify-center mb-6 backdrop-blur-xl bg-white/5 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                <Server className="w-8 h-8 md:w-10 md:h-10 text-white/60" />
               </div>
-              <p className="font-mono text-xs tracking-[0.2em] text-white/50 uppercase font-bold">
-                {servers === undefined ? "Loading..." : "No server available"}
+              <p className="font-mono text-[11px] md:text-xs tracking-[0.2em] text-white/60 uppercase font-bold mb-2">
+                {servers === undefined ? "Loading server…" : iframeError ? "Server blocked playback" : "No server available"}
               </p>
+              <p className="text-white/50 text-xs md:text-sm leading-relaxed mb-5">
+                {iframeError
+                  ? "This source tried to redirect to ads. Try another server below."
+                  : serverList.length === 0
+                    ? "We couldn't find a working source for this episode yet. Pick another episode or check back soon."
+                    : "Pick a different language or server."}
+              </p>
+              {langServers.length > 1 && (
+                <div className="flex flex-wrap gap-2 justify-center max-w-sm">
+                  {langServers.map((srv, idx) => (
+                    <button
+                      key={srv.id}
+                      onClick={() => { setSelectedServerIdx(idx); setIframeError(false); }}
+                      className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition-all ${
+                        idx === selectedServerIdx
+                          ? "bg-accent/20 text-accent border-accent/40"
+                          : "bg-white/5 text-white/70 border-white/10 hover:bg-white/10"
+                      }`}
+                    >
+                      {srv.server_name} · {srv.quality}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
