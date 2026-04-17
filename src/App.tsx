@@ -14,6 +14,7 @@ import Watchlist from "./pages/Watchlist";
 import Profile from "./pages/Profile";
 import Genres from "./pages/Genres";
 import Admin from "./pages/Admin";
+import Live from "./pages/Live";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/profile" element={<Profile />} />
             <Route path="/genres" element={<Genres />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/live" element={<Live />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

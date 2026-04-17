@@ -49,6 +49,11 @@ const Watch = () => {
   const [selectedLang, setSelectedLang] = useState<string | null>(null);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [iframeError, setIframeError] = useState(false);
+  // Smart fallback state
+  const [iframeMode, setIframeMode] = useState<"sandboxed" | "unsafe">("sandboxed");
+  const [iframeKey, setIframeKey] = useState(0);
+  const [autoTried, setAutoTried] = useState<Set<string>>(new Set());
+  const loadTimerRef = useRef<number | null>(null);
 
   const epList = episodes || [];
   const currentEpIdx = epList.findIndex((e) => e.id === episodeId);
@@ -86,10 +91,70 @@ const Watch = () => {
   const streamUrl = resolveStreamUrl(rawUrl);
   const useIframe = isEmbedUrl(streamUrl);
 
-  // reset error when switching server / episode
-  useEffect(() => { setIframeError(false); }, [streamUrl, episodeId]);
-  // reset server idx when language changes
-  useEffect(() => { setSelectedServerIdx(0); }, [selectedLang, episodeId]);
+  // reset error + restart attempt when switching server / episode
+  useEffect(() => {
+    setIframeError(false);
+    setIframeMode("sandboxed");
+    setIframeKey((k) => k + 1);
+  }, [streamUrl, episodeId]);
+  // reset server idx + auto-tried set when language or episode changes
+  useEffect(() => {
+    setSelectedServerIdx(0);
+    setAutoTried(new Set());
+  }, [selectedLang, episodeId]);
+
+  // Smart fallback: if iframe doesn't load in 8s, advance to next server (sandboxed).
+  // If all servers tried sandboxed, fall back to unsafe mode on the first server.
+  useEffect(() => {
+    if (!useIframe || !streamUrl || iframeError) return;
+    if (loadTimerRef.current) clearTimeout(loadTimerRef.current);
+    loadTimerRef.current = window.setTimeout(() => {
+      // load took too long → treat as failure
+      handleIframeFail();
+    }, 8000);
+    return () => { if (loadTimerRef.current) clearTimeout(loadTimerRef.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [streamUrl, useIframe, iframeKey]);
+
+  const handleIframeFail = useCallback(() => {
+    if (loadTimerRef.current) { clearTimeout(loadTimerRef.current); loadTimerRef.current = null; }
+    const currentKey = `${selectedLang}-${selectedServerIdx}-${iframeMode}`;
+    setAutoTried((prev) => {
+      const next = new Set(prev);
+      next.add(currentKey);
+      return next;
+    });
+    // Try next sandboxed server
+    if (iframeMode === "sandboxed") {
+      const nextIdx = selectedServerIdx + 1;
+      if (nextIdx < langServers.length) {
+        setSelectedServerIdx(nextIdx);
+        setIframeKey((k) => k + 1);
+        return;
+      }
+      // All sandboxed servers tried → last resort: unsafe on first server
+      if (langServers.length > 0) {
+        setSelectedServerIdx(0);
+        setIframeMode("unsafe");
+        setIframeKey((k) => k + 1);
+        return;
+      }
+    }
+    // Already in unsafe mode and still failed → show manual picker
+    setIframeError(true);
+  }, [iframeMode, selectedServerIdx, langServers.length, selectedLang]);
+
+  const handleIframeLoad = useCallback(() => {
+    if (loadTimerRef.current) { clearTimeout(loadTimerRef.current); loadTimerRef.current = null; }
+  }, []);
+
+  const backToSafeMode = useCallback(() => {
+    setIframeMode("sandboxed");
+    setSelectedServerIdx(0);
+    setAutoTried(new Set());
+    setIframeError(false);
+    setIframeKey((k) => k + 1);
+  }, []);
 
   useEffect(() => {
     if (useIframe || !streamUrl) return;
@@ -223,13 +288,15 @@ const Watch = () => {
         {/* Video or Iframe */}
         {useIframe && streamUrl && !iframeError ? (
           <iframe
+            key={iframeKey}
             src={streamUrl}
             className="absolute inset-0 w-full h-full z-0"
             allowFullScreen
             allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-            sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
+            sandbox={iframeMode === "sandboxed" ? "allow-scripts allow-same-origin allow-presentation allow-forms" : undefined}
             referrerPolicy="no-referrer"
-            onError={() => setIframeError(true)}
+            onLoad={handleIframeLoad}
+            onError={handleIframeFail}
             frameBorder="0"
           />
         ) : !useIframe && streamUrl ? (
@@ -239,7 +306,23 @@ const Watch = () => {
             playsInline
             onClick={togglePlay}
           />
-        ) : (
+        ) : null}
+
+        {/* Unsafe-mode ad warning banner */}
+        {useIframe && streamUrl && !iframeError && iframeMode === "unsafe" && (
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-40 max-w-[92%] px-4 py-2 rounded-full bg-red-500/90 backdrop-blur-md text-white text-[11px] sm:text-xs font-bold flex items-center gap-2 shadow-[0_10px_30px_rgba(239,68,68,0.4)] border border-red-300/30">
+            <span>⚠ Ads may appear — this provider requires it to play.</span>
+            <button
+              onClick={backToSafeMode}
+              className="ml-1 px-2 py-0.5 rounded-full bg-white/20 hover:bg-white/30 transition-colors text-[10px] uppercase tracking-wider whitespace-nowrap"
+            >
+              Safe mode
+            </button>
+          </div>
+        )}
+
+        {/* Empty placeholder fallback */}
+        {(!streamUrl || iframeError) && (
           <div className="absolute inset-0 flex items-center justify-center z-0 px-6">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-black" />
             <div className="z-10 text-center flex flex-col items-center max-w-md">
@@ -247,11 +330,11 @@ const Watch = () => {
                 <Server className="w-8 h-8 md:w-10 md:h-10 text-white/60" />
               </div>
               <p className="font-mono text-[11px] md:text-xs tracking-[0.2em] text-white/60 uppercase font-bold mb-2">
-                {servers === undefined ? "Loading server…" : iframeError ? "Server blocked playback" : "No server available"}
+                {servers === undefined ? "Loading server…" : iframeError ? "All servers blocked" : "No server available"}
               </p>
               <p className="text-white/50 text-xs md:text-sm leading-relaxed mb-5">
                 {iframeError
-                  ? "This source tried to redirect to ads. Try another server below."
+                  ? "Every source either timed out or required ads. Pick one below to retry."
                   : serverList.length === 0
                     ? "We couldn't find a working source for this episode yet. Pick another episode or check back soon."
                     : "Pick a different language or server."}
@@ -261,7 +344,12 @@ const Watch = () => {
                   {langServers.map((srv, idx) => (
                     <button
                       key={srv.id}
-                      onClick={() => { setSelectedServerIdx(idx); setIframeError(false); }}
+                      onClick={() => {
+                        setSelectedServerIdx(idx);
+                        setIframeMode("sandboxed");
+                        setIframeError(false);
+                        setIframeKey((k) => k + 1);
+                      }}
                       className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition-all ${
                         idx === selectedServerIdx
                           ? "bg-accent/20 text-accent border-accent/40"
@@ -341,7 +429,13 @@ const Watch = () => {
                     {langServers.map((srv, idx) => (
                       <button
                         key={srv.id}
-                        onClick={() => { setSelectedServerIdx(idx); setShowServerMenu(false); }}
+                        onClick={() => {
+                          setSelectedServerIdx(idx);
+                          setIframeMode("sandboxed");
+                          setIframeError(false);
+                          setIframeKey((k) => k + 1);
+                          setShowServerMenu(false);
+                        }}
                         className={`block w-full text-left px-4 py-2.5 rounded-xl text-xs transition-colors font-medium ${
                           idx === selectedServerIdx ? "bg-accent/20 text-accent" : "text-white/70 hover:text-white hover:bg-white/10"
                         }`}
