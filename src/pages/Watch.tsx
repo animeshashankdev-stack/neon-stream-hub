@@ -49,6 +49,11 @@ const Watch = () => {
   const [selectedLang, setSelectedLang] = useState<string | null>(null);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [iframeError, setIframeError] = useState(false);
+  // Smart fallback state
+  const [iframeMode, setIframeMode] = useState<"sandboxed" | "unsafe">("sandboxed");
+  const [iframeKey, setIframeKey] = useState(0);
+  const [autoTried, setAutoTried] = useState<Set<string>>(new Set());
+  const loadTimerRef = useRef<number | null>(null);
 
   const epList = episodes || [];
   const currentEpIdx = epList.findIndex((e) => e.id === episodeId);
@@ -86,10 +91,70 @@ const Watch = () => {
   const streamUrl = resolveStreamUrl(rawUrl);
   const useIframe = isEmbedUrl(streamUrl);
 
-  // reset error when switching server / episode
-  useEffect(() => { setIframeError(false); }, [streamUrl, episodeId]);
-  // reset server idx when language changes
-  useEffect(() => { setSelectedServerIdx(0); }, [selectedLang, episodeId]);
+  // reset error + restart attempt when switching server / episode
+  useEffect(() => {
+    setIframeError(false);
+    setIframeMode("sandboxed");
+    setIframeKey((k) => k + 1);
+  }, [streamUrl, episodeId]);
+  // reset server idx + auto-tried set when language or episode changes
+  useEffect(() => {
+    setSelectedServerIdx(0);
+    setAutoTried(new Set());
+  }, [selectedLang, episodeId]);
+
+  // Smart fallback: if iframe doesn't load in 8s, advance to next server (sandboxed).
+  // If all servers tried sandboxed, fall back to unsafe mode on the first server.
+  useEffect(() => {
+    if (!useIframe || !streamUrl || iframeError) return;
+    if (loadTimerRef.current) clearTimeout(loadTimerRef.current);
+    loadTimerRef.current = window.setTimeout(() => {
+      // load took too long → treat as failure
+      handleIframeFail();
+    }, 8000);
+    return () => { if (loadTimerRef.current) clearTimeout(loadTimerRef.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [streamUrl, useIframe, iframeKey]);
+
+  const handleIframeFail = useCallback(() => {
+    if (loadTimerRef.current) { clearTimeout(loadTimerRef.current); loadTimerRef.current = null; }
+    const currentKey = `${selectedLang}-${selectedServerIdx}-${iframeMode}`;
+    setAutoTried((prev) => {
+      const next = new Set(prev);
+      next.add(currentKey);
+      return next;
+    });
+    // Try next sandboxed server
+    if (iframeMode === "sandboxed") {
+      const nextIdx = selectedServerIdx + 1;
+      if (nextIdx < langServers.length) {
+        setSelectedServerIdx(nextIdx);
+        setIframeKey((k) => k + 1);
+        return;
+      }
+      // All sandboxed servers tried → last resort: unsafe on first server
+      if (langServers.length > 0) {
+        setSelectedServerIdx(0);
+        setIframeMode("unsafe");
+        setIframeKey((k) => k + 1);
+        return;
+      }
+    }
+    // Already in unsafe mode and still failed → show manual picker
+    setIframeError(true);
+  }, [iframeMode, selectedServerIdx, langServers.length, selectedLang]);
+
+  const handleIframeLoad = useCallback(() => {
+    if (loadTimerRef.current) { clearTimeout(loadTimerRef.current); loadTimerRef.current = null; }
+  }, []);
+
+  const backToSafeMode = useCallback(() => {
+    setIframeMode("sandboxed");
+    setSelectedServerIdx(0);
+    setAutoTried(new Set());
+    setIframeError(false);
+    setIframeKey((k) => k + 1);
+  }, []);
 
   useEffect(() => {
     if (useIframe || !streamUrl) return;
@@ -223,13 +288,15 @@ const Watch = () => {
         {/* Video or Iframe */}
         {useIframe && streamUrl && !iframeError ? (
           <iframe
+            key={iframeKey}
             src={streamUrl}
             className="absolute inset-0 w-full h-full z-0"
             allowFullScreen
             allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-            sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
+            sandbox={iframeMode === "sandboxed" ? "allow-scripts allow-same-origin allow-presentation allow-forms" : undefined}
             referrerPolicy="no-referrer"
-            onError={() => setIframeError(true)}
+            onLoad={handleIframeLoad}
+            onError={handleIframeFail}
             frameBorder="0"
           />
         ) : !useIframe && streamUrl ? (
