@@ -35,9 +35,10 @@ const Navbar = () => {
     }`}>
       <div className="max-w-7xl mx-auto flex items-center justify-between h-full px-6">
         <div className="flex items-center gap-6">
-          <Link to="/" className="flex items-center gap-3">
-            <div className="text-xl font-black tracking-widest bg-clip-text text-transparent bg-gradient-to-r from-teal-400 via-cyan-400 to-teal-300 drop-shadow-[0_0_10px_rgba(45,212,191,0.5)]">
-              Neon Curator
+          <Link to="/" className="flex items-center gap-2.5">
+            <img src="/logo.svg" alt="Senpai.tv" className="w-8 h-8 drop-shadow-[0_0_10px_rgba(45,212,191,0.4)]" />
+            <div className="text-lg sm:text-xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-teal-300 via-cyan-300 to-fuchsia-400">
+              Senpai<span className="text-white/50 font-light">.tv</span>
             </div>
           </Link>
           <div className="hidden md:flex items-center gap-1">

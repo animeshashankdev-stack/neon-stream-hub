@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Play, Plus, Check, Star, Clock, Calendar, Globe, ChevronDown, Share2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
@@ -18,6 +18,7 @@ const formatDuration = (seconds: number) => {
 const ContentDetail = () => {
   const { id } = useParams();
   const [selectedSeason, setSelectedSeason] = useState(1);
+  const [selectedLang, setSelectedLang] = useState<string>("");
   const { data: content, isLoading } = useContentDetail(id);
   const { data: episodes } = useEpisodes(id);
   const { data: recommendations } = useRecommendations(id);
@@ -28,6 +29,14 @@ const ContentDetail = () => {
   const seasons = [...new Set(episodes?.map((e) => e.season_number) || [1])];
   const filteredEpisodes = episodes?.filter((e) => e.season_number === selectedSeason) || [];
   const firstEpisode = filteredEpisodes[0];
+
+  // Language options derived from content + a sane default list
+  const languageOptions = [content?.language, "English (Dub)", "Japanese (Sub)", "Spanish", "Hindi"]
+    .filter((v, i, a): v is string => !!v && a.indexOf(v) === i);
+
+  useEffect(() => {
+    if (!selectedLang && languageOptions[0]) setSelectedLang(languageOptions[0]);
+  }, [languageOptions, selectedLang]);
 
   if (isLoading) {
     return (
@@ -104,24 +113,68 @@ const ContentDetail = () => {
               )}
             </div>
 
-            <p className="text-white/70 text-sm leading-relaxed mb-6 max-w-lg line-clamp-3">
+            <p className="text-white/70 text-sm leading-relaxed mb-5 max-w-lg line-clamp-3">
               {content.description}
             </p>
+
+            {/* Language + Season selectors */}
+            <div className="space-y-3 mb-5">
+              {languageOptions.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">Language</p>
+                  <div className="flex flex-wrap gap-2">
+                    {languageOptions.map((lng) => (
+                      <button
+                        key={lng}
+                        onClick={() => setSelectedLang(lng)}
+                        className={`px-3.5 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                          selectedLang === lng
+                            ? "bg-teal-400/20 text-teal-300 border-teal-400/40 shadow-[0_0_10px_rgba(45,212,191,0.3)]"
+                            : "bg-white/5 text-white/70 border-white/10 hover:bg-white/10"
+                        }`}
+                      >
+                        {lng}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {seasons.length > 1 && (
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">Season</p>
+                  <div className="flex flex-wrap gap-2">
+                    {seasons.map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => setSelectedSeason(s)}
+                        className={`px-3.5 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                          selectedSeason === s
+                            ? "bg-fuchsia-400/20 text-fuchsia-300 border-fuchsia-400/40"
+                            : "bg-white/5 text-white/70 border-white/10 hover:bg-white/10"
+                        }`}
+                      >
+                        S{s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Actions */}
             <div className="flex flex-wrap items-center gap-3">
               {firstEpisode && (
                 <Link
                   to={`/watch/${content.id}/${firstEpisode.id}`}
-                  className="rounded-full bg-gradient-to-r from-teal-400 to-cyan-500 text-black font-bold px-8 py-3 shadow-[0_0_20px_rgba(45,212,191,0.4)] hover:shadow-[0_0_30px_rgba(45,212,191,0.6)] transition-all flex items-center gap-2 text-sm"
+                  className="rounded-full bg-gradient-to-r from-teal-400 to-cyan-500 text-black font-bold px-6 sm:px-8 py-3 shadow-[0_0_20px_rgba(45,212,191,0.4)] hover:shadow-[0_0_30px_rgba(45,212,191,0.6)] transition-all flex items-center gap-2 text-sm"
                 >
-                  <Play className="w-4 h-4 fill-current" /> Play Episode 1
+                  <Play className="w-4 h-4 fill-current" /> Play S{selectedSeason}·E{firstEpisode.episode_number}
                 </Link>
               )}
               {user && (
                 <button
                   onClick={() => toggleWatchlist.mutate(content.id)}
-                  className="rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white font-semibold px-6 py-3 hover:bg-white/20 transition-all flex items-center gap-2 text-sm"
+                  className="rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white font-semibold px-5 sm:px-6 py-3 hover:bg-white/20 transition-all flex items-center gap-2 text-sm"
                 >
                   {isInWatchlist ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                   {isInWatchlist ? "In Watchlist" : "Watchlist"}
