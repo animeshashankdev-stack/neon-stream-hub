@@ -2,48 +2,45 @@
 
 ## Plan
 
-Four deliverables: Auth rebrand, smart server fallback, favicon/OG, Live TV section.
+Six deliverables. Concise scope below.
 
-### 1. Auth page rebrand (`src/pages/Auth.tsx`)
-Split-screen layout:
-- **Left (desktop)**: Cinematic hero — large kana logo SVG with ambient teal/cyan/fuchsia glows, brand tagline ("Stream the senpai way."), 3 feature bullets (4K, Sub/Dub, Free).
-- **Right**: Glass card form (existing form, restyled with Senpai teal gradient buttons, white/10 borders).
-- Mobile: hero collapses to compact top banner.
+### 1. Fix Live page issues (`src/pages/Live.tsx`, `src/hooks/useIPTV.ts`)
+- **Country `<select>` text invisible**: native `<option>` elements inherit OS styling — replace native selects with custom dropdowns (Radix `Popover` + searchable list) that render dark-themed options.
+- **Hide broken-channel error UI**: add `error: boolean` to `ResolvedChannel`. When `LiveChannelPlayer` HLS load fails, fire `onChannelError(id)` callback → push id into a `Set<string>` (persisted in `localStorage` as `senpai.iptv.broken`). Filter list excludes those ids. Also pre-filter known-bad domains.
 
-### 2. Smart server fallback (`src/pages/Watch.tsx`)
-State machine per stream attempt:
-1. **Attempt 1** — sandboxed iframe (`allow-scripts allow-same-origin allow-presentation allow-forms`)
-2. On `onError` OR 8s timeout with no load → **Attempt 2**: auto-rotate to next server, sandboxed
-3. After all servers tried sandboxed → **Attempt 3**: re-try first server **unsandboxed** with red "⚠ Ads may appear — provider requires it" banner + "Back to safe mode" button
-4. Manual override: user can click any server to retry sandboxed
+### 2. Live TV favorites — "My Channels" rail (`src/pages/Live.tsx`, `src/components/LiveChannelPlayer.tsx`)
+- New hook `src/hooks/useChannelFavorites.ts` — localStorage-backed `Set<string>` of channel ids with `toggle/has` helpers.
+- Star button (top-right of each card + in player header).
+- New "⭐ My Channels" section pinned above the main grid when favorites exist.
 
-Implementation: `attemptIndex`, `mode: 'sandboxed' | 'unsafe'`, `iframeKey` to force remount, `onLoad` clears timeout, `onError` advances chain.
+### 3. EPG strip in player (`src/components/LiveChannelPlayer.tsx`, new `src/hooks/useEPG.ts`)
+- Fetch `https://iptv-org.github.io/api/guides.json` (cached 1h) → resolves channel→site mapping. EPG XMLTV data lives on `https://epg.pw/api/json.php?lang=en&channel_id=...` style endpoints; iptv-org guides reference external sites (sky.co.uk, etc.) — those aren't directly fetchable as JSON.
+- **Pragmatic approach**: use `https://iptv-org.github.io/epg/guides/` XMLTV files. Since per-channel XMLTV is heavy, we'll use a lightweight wrapper: `https://epg.pw/api/epg.json?channel_id=<id>` (free, CORS-enabled). If the channel has no EPG, hide the strip gracefully.
+- UI: thin strip below player header → `NOW: <program> (00:00–00:30)` and `NEXT: <program> (00:30–01:00)` with a slim progress bar for current program.
 
-### 3. Favicon + OG image
-- Generate `public/favicon.png` (512×512) and `public/og-image.png` (1200×630) via Lovable AI image gen (nano-banana) using kana-mark + gradient prompt
-- Delete `public/favicon.ico`, update `index.html` `<link rel="icon">` and OG/Twitter meta tags
+### 4. Live TV dedicated watch page (`src/pages/LiveWatch.tsx`)
+- Route: `/live/:channelId` — fullscreen-friendly page with player + EPG + channel info sidebar + "Related channels" (same country/category).
+- Update `Live.tsx` card click → navigate instead of modal (modal stays as quick-preview optional).
+- Add route in `src/App.tsx`.
 
-### 4. Live TV section (IPTV)
-- **New page** `src/pages/Live.tsx` — fetches `https://iptv-org.github.io/api/channels.json`, `streams.json`, `logos.json` (client-side, cached via React Query)
-- Joins channels↔streams↔logos by id, filters to channels with a working `.m3u8` stream
-- UI: search bar + country/category filter chips + responsive grid of channel cards (logo, name, country flag)
-- Click → opens player modal/route with **HLS.js** (`hls.js` npm pkg) for `.m3u8` playback in a native `<video>`. Includes fullscreen, volume, quality (HLS auto-levels).
-- Add nav link "Live TV" → `/live` in `Navbar.tsx`, route in `App.tsx`
+### 5. "Recently Watched" rail on homepage (`src/pages/Index.tsx`)
+- New component `src/components/RecentlyWatchedRail.tsx`.
+- Query `watch_history` joined with `episodes` + `content` for `auth.uid()`, ordered by `last_watched_at desc limit 10`.
+- Card shows episode thumbnail, S/E label, content title, **resume progress bar** (`progress_seconds / total_seconds`). Click → `/watch/:contentId/:episodeId`.
+- Hidden when not logged in or empty.
 
-```text
-┌─────────────────────────────────┐
-│ [Search] [Country▾] [Category▾] │
-├─────────────────────────────────┤
-│ [📺] [📺] [📺] [📺] [📺]       │
-│ name  name  name  name  name    │
-│ 🇺🇸    🇯🇵    🇬🇧    🇫🇷    🇮🇳    │
-└─────────────────────────────────┘
-```
+### 6. Backfill posters/thumbnails from Jikan (Edge Function)
+- New edge function `supabase/functions/jikan-enrich/index.ts` (admin-triggered):
+  1. Selects `content` rows where `poster_url` is null OR matches placeholder.
+  2. For each: `GET https://api.jikan.moe/v4/anime?q=<title>&limit=1` (rate-limit: 1 req/sec → use `await sleep(1100)`).
+  3. Updates `content.poster_url`, `banner_url`, `thumbnail_url` from `images.jpg.large_image_url` / `trailer.images.maximum_image_url`.
+  4. Then for each content's episodes with null thumbnail: `GET /anime/{mal_id}/episodes` (paginated) → picks episode by number → updates `episodes.thumbnail_url`. Falls back to anime image if missing.
+- Trigger: button on `Admin.tsx` → "Enrich images from Jikan" → calls function via `supabase.functions.invoke('jikan-enrich')`.
+- Returns progress summary `{ updated, skipped, failed }`.
 
 ### Technical
-- **Files edited**: `src/pages/Auth.tsx`, `src/pages/Watch.tsx`, `index.html`, `src/components/Navbar.tsx`, `src/App.tsx`
-- **Files created**: `src/pages/Live.tsx`, `src/components/LiveChannelPlayer.tsx`, `src/hooks/useIPTV.ts`, `public/favicon.png`, `public/og-image.png`
-- **Files deleted**: `public/favicon.ico`
-- **New dep**: `hls.js`
-- **No DB changes**
+- **Files created**: `src/pages/LiveWatch.tsx`, `src/components/RecentlyWatchedRail.tsx`, `src/hooks/useChannelFavorites.ts`, `src/hooks/useEPG.ts`, `supabase/functions/jikan-enrich/index.ts`
+- **Files edited**: `src/pages/Live.tsx`, `src/components/LiveChannelPlayer.tsx`, `src/hooks/useIPTV.ts`, `src/pages/Index.tsx`, `src/App.tsx`, `src/pages/Admin.tsx`, `supabase/config.toml`
+- **DB changes**: none (Jikan function uses service role to UPDATE existing rows)
+- **No new npm deps**
 
