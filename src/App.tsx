@@ -15,6 +15,7 @@ import Profile from "./pages/Profile";
 import Genres from "./pages/Genres";
 import Admin from "./pages/Admin";
 import Live from "./pages/Live";
+import LiveWatch from "./pages/LiveWatch";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ const App = () => (
             <Route path="/genres" element={<Genres />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/live" element={<Live />} />
+            <Route path="/live/:channelId" element={<LiveWatch />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
