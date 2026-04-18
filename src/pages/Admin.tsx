@@ -287,6 +287,7 @@ const Admin = () => {
               </tbody>
             </table>
           </div>
+          </div>
         )}
 
         {/* Analytics */}
