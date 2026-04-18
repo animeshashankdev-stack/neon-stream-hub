@@ -1,1 +1,4 @@
 project_id = "zoduthqkxhphvlldxyjr"
+
+[functions.jikan-enrich]
+verify_jwt = true

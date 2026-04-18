@@ -1,11 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { X, Maximize2, Minimize, Volume2, VolumeX, Loader2, AlertTriangle } from "lucide-react";
+import { X, Maximize2, Minimize, Volume2, VolumeX, Loader2, AlertTriangle, Star } from "lucide-react";
 import type { ResolvedChannel } from "@/hooks/useIPTV";
+import { useChannelFavorites, markChannelBroken } from "@/hooks/useChannelFavorites";
+import { useEPG, getNowNext } from "@/hooks/useEPG";
 
 interface Props {
   channel: ResolvedChannel;
   onClose: () => void;
 }
+
+const fmt = (d: Date) => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
 const LiveChannelPlayer = ({ channel, onClose }: Props) => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -14,6 +18,10 @@ const LiveChannelPlayer = ({ channel, onClose }: Props) => {
   const [fullscreen, setFullscreen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { has, toggle } = useChannelFavorites();
+  const { data: epg } = useEPG(channel.id);
+  const { now, next } = getNowNext(epg);
+  const nowProgress = now ? Math.min(100, ((Date.now() - now.start.getTime()) / (now.stop.getTime() - now.start.getTime())) * 100) : 0;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && !document.fullscreenElement) onClose(); };
@@ -44,14 +52,15 @@ const LiveChannelPlayer = ({ channel, onClose }: Props) => {
         });
         hls.on(Hls.Events.ERROR, (_e: any, data: any) => {
           if (data.fatal) {
-            setError("Stream unavailable. Try another channel.");
+            markChannelBroken(channel.id);
+            setError("Stream unavailable. This channel has been hidden from the list.");
             setLoading(false);
           }
         });
       } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
         video.src = url;
         video.addEventListener("loadedmetadata", () => { setLoading(false); video.play().catch(() => {}); });
-        video.addEventListener("error", () => { setError("Stream unavailable."); setLoading(false); });
+        video.addEventListener("error", () => { markChannelBroken(channel.id); setError("Stream unavailable."); setLoading(false); });
       } else {
         setError("HLS not supported in this browser.");
         setLoading(false);
@@ -101,13 +110,45 @@ const LiveChannelPlayer = ({ channel, onClose }: Props) => {
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center text-white shrink-0"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => toggle(channel.id)}
+              className={`w-10 h-10 rounded-full border flex items-center justify-center transition-colors ${has(channel.id) ? "bg-amber-400/20 border-amber-400/40 text-amber-300" : "bg-white/10 border-white/10 text-white hover:text-amber-300"}`}
+              aria-label="Favorite"
+            >
+              <Star className="w-4 h-4" fill={has(channel.id) ? "currentColor" : "none"} />
+            </button>
+            <button
+              onClick={onClose}
+              className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
+
+        {/* EPG strip */}
+        {(now || next) && (
+          <div className="absolute top-[72px] left-0 right-0 px-4 pointer-events-none">
+            <div className="bg-black/60 backdrop-blur border border-white/10 rounded-xl p-2.5 text-xs">
+              {now && (
+                <div className="mb-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-teal-300 font-bold uppercase tracking-widest text-[10px]">Now · {fmt(now.start)}–{fmt(now.stop)}</span>
+                    <span className="text-white/40 text-[10px]">{Math.round(nowProgress)}%</span>
+                  </div>
+                  <p className="text-white font-semibold truncate">{now.title}</p>
+                  <div className="mt-1 h-0.5 rounded-full bg-white/10 overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-teal-300 to-cyan-300" style={{ width: `${nowProgress}%` }} />
+                  </div>
+                </div>
+              )}
+              {next && (
+                <p className="text-white/60 text-[11px] truncate"><span className="text-white/40 font-bold uppercase tracking-widest">Next · {fmt(next.start)}</span> — {next.title}</p>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Loading / error */}
         {loading && !error && (

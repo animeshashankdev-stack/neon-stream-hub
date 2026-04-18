@@ -6,6 +6,7 @@ import ContentCard from "@/components/ContentCard";
 import PopularAnimeSection from "@/components/PopularAnimeSection";
 import RecommendedSection from "@/components/RecommendedSection";
 import ContinueWatchingSection from "@/components/ContinueWatchingSection";
+import RecentlyWatchedRail from "@/components/RecentlyWatchedRail";
 import Footer from "@/components/Footer";
 import SkeletonCard from "@/components/SkeletonCard";
 import { useContentList } from "@/hooks/useContent";
@@ -42,6 +43,7 @@ const Index = () => {
       </div>
 
       <ContinueWatchingSection />
+      <RecentlyWatchedRail />
 
       <ContentCarousel title="Trending This Season" action="See All" accentColor="from-pink-400 to-rose-500">
         {isLoading

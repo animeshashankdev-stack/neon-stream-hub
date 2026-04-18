@@ -7,7 +7,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
-import { Users, Eye, Film, TrendingUp, Shield } from "lucide-react";
+import { Users, Eye, Film, TrendingUp, Shield, Sparkles, Loader2 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 type Tab = "overview" | "users" | "content" | "analytics";
 
@@ -15,7 +16,22 @@ const Admin = () => {
   const { user, loading: authLoading } = useAuth();
   const { data: isAdmin, isLoading: adminLoading } = useIsAdmin();
   const [tab, setTab] = useState<Tab>("overview");
+  const [enriching, setEnriching] = useState(false);
   const queryClient = useQueryClient();
+
+  const runJikanEnrich = async () => {
+    setEnriching(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("jikan-enrich");
+      if (error) throw error;
+      toast({ title: "Enrichment complete", description: `Updated ${data.updated}, episodes ${data.episodesUpdated}, skipped ${data.skipped}, failed ${data.failed}` });
+      queryClient.invalidateQueries({ queryKey: ["admin_content"] });
+    } catch (e: any) {
+      toast({ title: "Enrichment failed", description: e?.message || "Unknown error", variant: "destructive" });
+    } finally {
+      setEnriching(false);
+    }
+  };
 
   // Page views
   const { data: pageViews } = useQuery({
@@ -234,7 +250,18 @@ const Admin = () => {
 
         {/* Content */}
         {tab === "content" && (
-          <div className="glass-card rounded-xl overflow-hidden">
+          <div className="space-y-4">
+            <div className="flex justify-end">
+              <button
+                onClick={runJikanEnrich}
+                disabled={enriching}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/20 hover:bg-primary/30 border border-primary/40 text-primary text-sm font-bold transition-colors disabled:opacity-50"
+              >
+                {enriching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                {enriching ? "Enriching…" : "Enrich images from Jikan"}
+              </button>
+            </div>
+            <div className="glass-card rounded-xl overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border/30 text-left">
@@ -259,6 +286,7 @@ const Admin = () => {
                 ))}
               </tbody>
             </table>
+          </div>
           </div>
         )}
 
