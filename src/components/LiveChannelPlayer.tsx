@@ -1,11 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { X, Maximize2, Minimize, Volume2, VolumeX, Loader2, AlertTriangle } from "lucide-react";
+import { X, Maximize2, Minimize, Volume2, VolumeX, Loader2, AlertTriangle, Star } from "lucide-react";
 import type { ResolvedChannel } from "@/hooks/useIPTV";
+import { useChannelFavorites, markChannelBroken } from "@/hooks/useChannelFavorites";
+import { useEPG, getNowNext } from "@/hooks/useEPG";
 
 interface Props {
   channel: ResolvedChannel;
   onClose: () => void;
 }
+
+const fmt = (d: Date) => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
 const LiveChannelPlayer = ({ channel, onClose }: Props) => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -14,6 +18,10 @@ const LiveChannelPlayer = ({ channel, onClose }: Props) => {
   const [fullscreen, setFullscreen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { has, toggle } = useChannelFavorites();
+  const { data: epg } = useEPG(channel.id);
+  const { now, next } = getNowNext(epg);
+  const nowProgress = now ? Math.min(100, ((Date.now() - now.start.getTime()) / (now.stop.getTime() - now.start.getTime())) * 100) : 0;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && !document.fullscreenElement) onClose(); };
@@ -44,14 +52,15 @@ const LiveChannelPlayer = ({ channel, onClose }: Props) => {
         });
         hls.on(Hls.Events.ERROR, (_e: any, data: any) => {
           if (data.fatal) {
-            setError("Stream unavailable. Try another channel.");
+            markChannelBroken(channel.id);
+            setError("Stream unavailable. This channel has been hidden from the list.");
             setLoading(false);
           }
         });
       } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
         video.src = url;
         video.addEventListener("loadedmetadata", () => { setLoading(false); video.play().catch(() => {}); });
-        video.addEventListener("error", () => { setError("Stream unavailable."); setLoading(false); });
+        video.addEventListener("error", () => { markChannelBroken(channel.id); setError("Stream unavailable."); setLoading(false); });
       } else {
         setError("HLS not supported in this browser.");
         setLoading(false);
