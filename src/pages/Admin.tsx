@@ -24,6 +24,10 @@ const Admin = () => {
     try {
       const { data, error } = await supabase.functions.invoke("jikan-enrich");
       if (error) throw error;
+      if (!data?.ok) {
+        toast({ title: "Enrichment failed", description: data?.error || "Unknown error", variant: "destructive" });
+        return;
+      }
       toast({ title: "Enrichment complete", description: `Updated ${data.updated}, episodes ${data.episodesUpdated}, skipped ${data.skipped}, failed ${data.failed}` });
       queryClient.invalidateQueries({ queryKey: ["admin_content"] });
     } catch (e: any) {
