@@ -1,16 +1,23 @@
 
 
-The user wants me to verify the `jikan-enrich` edge function works. This is a verification/testing task that requires browser interaction with the admin panel.
+The function returns 401/403/500 with non-2xx, which supabase-js surfaces as "Edge Function returned a non-2xx status code" without the body. Two issues likely:
 
-I'll use the browser automation tools to navigate to Admin → Content, click the "Enrich images from Jikan" button, and report the result.
+1. `supabase/config.toml` sets `verify_jwt = true` for `jikan-enrich`. Combined with the function also checking auth manually — if the client invoke isn't passing auth properly or the user isn't admin, it 401/403s.
+2. Even when reachable, errors return non-2xx so the client shows the generic message.
+
+Fix: always return HTTP 200 with `{ ok, error, ...stats }` so the UI can show the real reason. Also wrap the long-running loop with a small batch limit + better logging so we can see progress.
 
 ## Plan
 
-1. Navigate to `/admin` in the preview
-2. Open the Content tab
-3. Click "Enrich images from Jikan" button
-4. Wait for response and capture the success summary toast/output
-5. If errors appear, check edge function logs and report findings
+Edit `supabase/functions/jikan-enrich/index.ts`:
+- Add `respond(ok, payload)` helper that always returns 200.
+- Replace all `status: 401/403/500` returns with `respond(false, { error, stage })`.
+- Add try/catch around per-row work; collect errors into array; never throw out.
+- Add optional `?limit=N` query param (default 50) to avoid timeouts on large catalogs.
+- Log `console.log` per row for dashboard visibility.
 
-If login is required, I'll stop and ask the user to log in first.
+Edit `src/pages/Admin.tsx`:
+- Read `data.ok` from response; show toast with `data.error` when `ok=false`, else show `updated/skipped/failed/episodesUpdated` summary.
+
+No DB or config changes needed (`verify_jwt = true` is fine — function still validates admin role internally).
 
