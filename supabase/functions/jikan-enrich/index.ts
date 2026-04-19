@@ -38,23 +38,37 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return respond(false, { error: "Missing Authorization header", stage: "auth" });
 
+    const token = authHeader.replace(/^Bearer\s+/i, "");
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anon = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY")!;
 
     const userClient = createClient(supabaseUrl, anon, { global: { headers: { Authorization: authHeader } } });
-    const { data: userData, error: uErr } = await userClient.auth.getUser();
-    if (uErr || !userData?.user) return respond(false, { error: "Unauthorized — invalid session", stage: "auth" });
+    const { data: claims, error: cErr } = await userClient.auth.getClaims(token);
+    if (cErr || !claims?.sub) return respond(false, { error: "Unauthorized — invalid session", stage: "auth" });
 
     const { data: roleCheck, error: rErr } = await userClient.rpc("has_role", {
-      _user_id: userData.user.id,
+      _user_id: claims.sub,
       _role: "admin",
     });
     if (rErr) return respond(false, { error: `Role check failed: ${rErr.message}`, stage: "role" });
     if (!roleCheck) return respond(false, { error: "Forbidden — admin role required", stage: "role" });
 
     const url = new URL(req.url);
-    const limit = Math.min(parseInt(url.searchParams.get("limit") || "50", 10) || 50, 200);
+    let limit = 50;
+    try {
+      const body = await req.json();
+      if (body?.limit) limit = Number(body.limit);
+    } catch {
+      // ignore invalid or empty body
+    }
+
+    if (url.searchParams.has("limit")) {
+      limit = Number(url.searchParams.get("limit"));
+    }
+
+    if (!Number.isFinite(limit) || limit < 1) limit = 50;
+    limit = Math.min(limit, 200);
 
     const admin = createClient(supabaseUrl, serviceKey);
 
@@ -109,10 +123,11 @@ Deno.serve(async (req) => {
             }
           }
         }
-      } catch (e: any) {
+      } catch (error: unknown) {
         failed++;
-        errors.push(`${row.title}: ${e?.message || String(e)}`);
-        console.error(`[jikan-enrich] Row failed: ${row.title}`, e);
+        const message = error instanceof Error ? error.message : String(error);
+        errors.push(`${row.title}: ${message}`);
+        console.error(`[jikan-enrich] Row failed: ${row.title}`, error);
       }
     }
 
@@ -121,8 +136,8 @@ Deno.serve(async (req) => {
       total: contentRows?.length || 0,
       errors: errors.slice(0, 10),
     });
-  } catch (e: any) {
-    console.error("[jikan-enrich] Fatal:", e);
-    return respond(false, { error: String(e?.message || e), stage: "fatal" });
+  } catch (error: unknown) {
+    console.error("[jikan-enrich] Fatal:", error);
+    return respond(false, { error: error instanceof Error ? error.message : String(error), stage: "fatal" });
   }
 });

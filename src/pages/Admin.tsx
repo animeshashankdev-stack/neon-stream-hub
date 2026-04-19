@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,6 +6,9 @@ import { useIsAdmin } from "@/hooks/useAdmin";
 import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import { Users, Eye, Film, TrendingUp, Shield, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -17,12 +20,45 @@ const Admin = () => {
   const { data: isAdmin, isLoading: adminLoading } = useIsAdmin();
   const [tab, setTab] = useState<Tab>("overview");
   const [enriching, setEnriching] = useState(false);
+  const [showEnrichDialog, setShowEnrichDialog] = useState(false);
+  const [batchLimit, setBatchLimit] = useState(50);
+  const [contentCount, setContentCount] = useState<number | null>(null);
+  const [countLoading, setCountLoading] = useState(false);
+  const [dialogError, setDialogError] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
-  const runJikanEnrich = async () => {
+  const formatDuration = (seconds: number) => `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+
+  const loadContentCount = async () => {
+    setDialogError(null);
+    setCountLoading(true);
+    try {
+      const { count, error } = await supabase.from("content").select("id", { count: "exact", head: true });
+      if (error) throw error;
+      setContentCount(count ?? 0);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      setDialogError(message || "Unable to fetch content count");
+      toast({ title: "Unable to estimate rows", description: message || "Could not fetch content count", variant: "destructive" });
+    } finally {
+      setCountLoading(false);
+    }
+  };
+
+  const openEnrichDialog = async () => {
+    setShowEnrichDialog(true);
+    if (contentCount === null) {
+      await loadContentCount();
+    }
+  };
+
+  const runJikanEnrich = async (limit: number = batchLimit) => {
     setEnriching(true);
     try {
-      const { data, error } = await supabase.functions.invoke("jikan-enrich");
+      const { data, error } = await supabase.functions.invoke(`jikan-enrich?limit=${limit}`, {
+        body: JSON.stringify({ limit }),
+        headers: { "Content-Type": "application/json" },
+      });
       if (error) throw error;
       if (!data?.ok) {
         toast({ title: "Enrichment failed", description: data?.error || "Unknown error", variant: "destructive" });
@@ -30,8 +66,10 @@ const Admin = () => {
       }
       toast({ title: "Enrichment complete", description: `Updated ${data.updated}, episodes ${data.episodesUpdated}, skipped ${data.skipped}, failed ${data.failed}` });
       queryClient.invalidateQueries({ queryKey: ["admin_content"] });
-    } catch (e: any) {
-      toast({ title: "Enrichment failed", description: e?.message || "Unknown error", variant: "destructive" });
+      setShowEnrichDialog(false);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast({ title: "Enrichment failed", description: message || "Unknown error", variant: "destructive" });
     } finally {
       setEnriching(false);
     }
@@ -257,7 +295,7 @@ const Admin = () => {
           <div className="space-y-4">
             <div className="flex justify-end">
               <button
-                onClick={runJikanEnrich}
+                onClick={openEnrichDialog}
                 disabled={enriching}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/20 hover:bg-primary/30 border border-primary/40 text-primary text-sm font-bold transition-colors disabled:opacity-50"
               >
@@ -265,6 +303,58 @@ const Admin = () => {
                 {enriching ? "Enriching…" : "Enrich images from Jikan"}
               </button>
             </div>
+
+            <Dialog open={showEnrichDialog} onOpenChange={setShowEnrichDialog}>
+              <DialogContent className="max-w-xl">
+                <DialogHeader>
+                  <DialogTitle>Run Jikan Enrichment</DialogTitle>
+                  <DialogDescription>Confirm the batch size and estimated run time before starting the enrichment job.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="rounded-xl border border-border/70 bg-muted p-4">
+                    <p className="text-sm text-muted-foreground">Total content rows</p>
+                    <p className="mt-2 text-3xl font-bold">{countLoading ? "Loading…" : contentCount !== null ? contentCount.toLocaleString() : "Unknown"}</p>
+                    <p className="text-sm text-muted-foreground mt-1">This estimate is used to calculate the expected runtime.</p>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="batch-limit">Batch limit</Label>
+                    <Input
+                      id="batch-limit"
+                      type="number"
+                      min={1}
+                      max={200}
+                      value={batchLimit}
+                      onChange={(e) => setBatchLimit(Math.min(200, Math.max(1, Number(e.target.value) || 1)))}
+                    />
+                    <p className="text-sm text-muted-foreground">Maximum rows to process in this enrichment run.</p>
+                  </div>
+
+                  <div className="grid gap-1 text-sm">
+                    <span className="font-medium">Estimated runtime</span>
+                    <span className="text-muted-foreground">{countLoading ? "Loading…" : formatDuration(Math.ceil((contentCount ?? 0) * 1.2))}</span>
+                  </div>
+
+                  {dialogError ? <p className="text-sm text-destructive">{dialogError}</p> : null}
+                </div>
+                <DialogFooter className="justify-end gap-2">
+                  <DialogClose asChild>
+                    <button type="button" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-secondary/50">
+                      Cancel
+                    </button>
+                  </DialogClose>
+                  <button
+                    type="button"
+                    disabled={enriching || countLoading}
+                    onClick={() => runJikanEnrich(batchLimit)}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-bold transition-colors disabled:opacity-50"
+                  >
+                    {enriching ? <Loader2 className="w-4 h-4 animate-spin" /> : "Run enrichment"}
+                  </button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
             <div className="glass-card rounded-xl overflow-hidden">
             <table className="w-full text-sm">
               <thead>
