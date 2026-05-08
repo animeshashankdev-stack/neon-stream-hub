@@ -36,7 +36,7 @@ export function useChannelFavorites() {
     const syncFavorites = async () => {
       const localFavorites = loadLocalFavorites();
       const { data, error } = await supabase
-        .from<{ channel_id: string }>("channel_favorites")
+        .from("channel_favorites")
         .select("channel_id")
         .eq("user_id", user.id);
 
@@ -45,7 +45,7 @@ export function useChannelFavorites() {
         return;
       }
 
-      const remoteFavorites = new Set<string>((data || []).map((row) => row.channel_id));
+      const remoteFavorites = new Set<string>(((data as Array<{ channel_id: string }>) || []).map((row) => row.channel_id));
       const mergedFavorites = new Set<string>([...remoteFavorites, ...localFavorites]);
       saveLocalFavorites(mergedFavorites);
       setFavs(mergedFavorites);
