@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      channel_favorites: {
+        Row: {
+          channel_id: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          channel_id: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          channel_id?: string
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       content: {
         Row: {
           banner_url: string | null
@@ -166,6 +184,155 @@ export type Database = {
         }
         Relationships: []
       }
+      iptv_channels: {
+        Row: {
+          channel_id: string | null
+          country: string | null
+          created_at: string
+          group_title: string | null
+          id: string
+          language: string | null
+          last_synced_at: string
+          logo_url: string | null
+          name: string
+          playlist_id: string | null
+          stream_url: string
+        }
+        Insert: {
+          channel_id?: string | null
+          country?: string | null
+          created_at?: string
+          group_title?: string | null
+          id?: string
+          language?: string | null
+          last_synced_at?: string
+          logo_url?: string | null
+          name: string
+          playlist_id?: string | null
+          stream_url: string
+        }
+        Update: {
+          channel_id?: string | null
+          country?: string | null
+          created_at?: string
+          group_title?: string | null
+          id?: string
+          language?: string | null
+          last_synced_at?: string
+          logo_url?: string | null
+          name?: string
+          playlist_id?: string | null
+          stream_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "iptv_channels_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "iptv_playlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      iptv_epg_programs: {
+        Row: {
+          category: string | null
+          channel_id: string
+          created_at: string
+          description: string | null
+          end_time: string
+          id: string
+          start_time: string
+          title: string
+        }
+        Insert: {
+          category?: string | null
+          channel_id: string
+          created_at?: string
+          description?: string | null
+          end_time: string
+          id?: string
+          start_time: string
+          title: string
+        }
+        Update: {
+          category?: string | null
+          channel_id?: string
+          created_at?: string
+          description?: string | null
+          end_time?: string
+          id?: string
+          start_time?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      iptv_playlists: {
+        Row: {
+          created_at: string
+          epg_url: string | null
+          id: string
+          is_default: boolean
+          last_synced_at: string | null
+          m3u_url: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          epg_url?: string | null
+          id?: string
+          is_default?: boolean
+          last_synced_at?: string | null
+          m3u_url: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          epg_url?: string | null
+          id?: string
+          is_default?: boolean
+          last_synced_at?: string | null
+          m3u_url?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      manga_progress: {
+        Row: {
+          chapter_id: string
+          created_at: string
+          id: string
+          manga_id: string
+          page: number
+          total_pages: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          chapter_id: string
+          created_at?: string
+          id?: string
+          manga_id: string
+          page?: number
+          total_pages?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          chapter_id?: string
+          created_at?: string
+          id?: string
+          manga_id?: string
+          page?: number
+          total_pages?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       page_views: {
         Row: {
           created_at: string
@@ -193,6 +360,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          is_premium: boolean
           level: number
           updated_at: string
           user_id: string
@@ -203,6 +371,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          is_premium?: boolean
           level?: number
           updated_at?: string
           user_id: string
@@ -213,10 +382,35 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          is_premium?: boolean
           level?: number
           updated_at?: string
           user_id?: string
           xp?: number
+        }
+        Relationships: []
+      }
+      read_history: {
+        Row: {
+          created_at: string
+          id: string
+          pages_read: number
+          read_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          pages_read?: number
+          read_date?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          pages_read?: number
+          read_date?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -351,7 +545,24 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_profiles: {
+        Row: {
+          avatar_url: string | null
+          display_name: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          display_name?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          display_name?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
@@ -361,9 +572,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_moderator: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role: "admin" | "moderator" | "user" | "banned"
       content_status: "ongoing" | "completed" | "upcoming"
       content_type: "movie" | "series"
     }
@@ -493,7 +705,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["admin", "moderator", "user", "banned"],
       content_status: ["ongoing", "completed", "upcoming"],
       content_type: ["movie", "series"],
     },
