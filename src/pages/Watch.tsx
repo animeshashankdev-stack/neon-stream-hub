@@ -276,12 +276,16 @@ const Watch = () => {
   const nextEp = currentEpIdx >= 0 && currentEpIdx < epList.length - 1 ? epList[currentEpIdx + 1] : null;
   const prevEp = currentEpIdx > 0 ? epList[currentEpIdx - 1] : null;
 
+  const backdropImage = content?.banner_url || content?.poster_url || "";
+  const posterImage = content?.poster_url || content?.thumbnail_url || "";
+  const epFallback = content?.thumbnail_url || content?.poster_url || "";
+
   return (
     <div className="min-h-screen bg-[#080818] text-white font-body selection:bg-accent/30 flex flex-col">
       {/* Video Player Area */}
       <div
         ref={containerRef}
-        className="relative w-full aspect-video md:aspect-auto md:h-[58vh] bg-black flex flex-col justify-center items-center group cursor-pointer overflow-hidden border-b border-white/5 shrink-0"
+        className="relative w-full aspect-video lg:aspect-auto lg:h-[60vh] xl:h-[65vh] max-h-[80vh] bg-black flex flex-col justify-center items-center group cursor-pointer overflow-hidden border-b border-white/5 shrink-0"
         onMouseMove={handleMouseMove}
         onMouseEnter={() => setShowControls(true)}
       >
@@ -324,7 +328,15 @@ const Watch = () => {
         {/* Empty placeholder fallback */}
         {(!streamUrl || iframeError) && (
           <div className="absolute inset-0 flex items-center justify-center z-0 px-6">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-black" />
+            {backdropImage && (
+              <img
+                src={backdropImage}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover opacity-30 blur-xl scale-110"
+                loading="lazy"
+              />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background/80 to-black/90" />
             <div className="z-10 text-center flex flex-col items-center max-w-md">
               <div className="w-20 h-20 md:w-24 md:h-24 rounded-full border border-white/10 flex items-center justify-center mb-6 backdrop-blur-xl bg-white/5 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
                 <Server className="w-8 h-8 md:w-10 md:h-10 text-white/60" />
@@ -558,11 +570,20 @@ const Watch = () => {
       </div>
 
       {/* Info Section Below Player */}
-      <div className="flex-1 bg-gradient-to-br from-[#080818] to-[#0A0A1A] p-4 md:p-8 lg:p-12 relative z-10">
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8 lg:gap-12">
+      <div className="flex-1 bg-gradient-to-br from-[#080818] to-[#0A0A1A] p-4 sm:p-6 md:p-8 lg:p-12 relative z-10">
+        <div className="max-w-7xl mx-auto flex flex-col xl:flex-row gap-6 md:gap-8 xl:gap-12">
 
           {/* Left Main Info */}
-          <div className="flex-1 space-y-5">
+          <div className="flex-1 space-y-5 flex flex-col md:flex-row md:gap-6">
+            {posterImage && (
+              <img
+                src={posterImage}
+                alt={content?.title || ""}
+                className="hidden md:block w-40 lg:w-48 aspect-[2/3] object-cover rounded-2xl border border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.5)] shrink-0"
+                loading="lazy"
+              />
+            )}
+            <div className="flex-1 space-y-5 min-w-0">
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-sm font-semibold text-white/60 tracking-wide">
               <Link to={`/content/${contentId}`} className="text-accent hover:underline">{content?.title}</Link>
@@ -570,12 +591,12 @@ const Watch = () => {
               <span>Season {currentEp?.season_number || 1}</span>
             </div>
 
-            <h2 className="text-2xl md:text-3xl lg:text-4xl font-display font-black text-white tracking-tight drop-shadow-md">
+            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-display font-black text-white tracking-tight drop-shadow-md">
               {currentEp?.title || `Episode ${currentEp?.episode_number || 1}`}
             </h2>
 
             {content?.description && (
-              <p className="text-white/70 font-light leading-relaxed max-w-3xl text-sm md:text-base">
+              <p className="text-white/70 font-light leading-relaxed max-w-3xl text-sm md:text-base line-clamp-4 md:line-clamp-none">
                 {content.description}
               </p>
             )}
@@ -599,10 +620,11 @@ const Watch = () => {
                 </Link>
               )}
             </div>
+            </div>
           </div>
 
           {/* Right Sidebar — Episodes */}
-          <div className="w-full lg:w-[400px] shrink-0 space-y-4">
+          <div className="w-full xl:w-[380px] shrink-0 space-y-4">
             <h3 className="text-lg font-display font-black text-white tracking-wide uppercase">Episodes</h3>
 
             {/* Season Tabs */}
@@ -625,7 +647,7 @@ const Watch = () => {
             )}
 
             {/* Episode List */}
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[20px] p-2 flex flex-col gap-1.5 max-h-[500px] overflow-y-auto scrollbar-hide">
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[20px] p-2 flex flex-col gap-1.5 max-h-[60vh] xl:max-h-[70vh] overflow-y-auto scrollbar-hide">
               {filteredEpisodes.map((ep) => (
                 <Link
                   key={ep.id}
@@ -636,15 +658,25 @@ const Watch = () => {
                       : "border border-transparent hover:bg-white/5 hover:border-white/10"
                   }`}
                 >
-                  <div className={`relative w-24 md:w-28 aspect-video rounded-[10px] overflow-hidden shrink-0 flex items-center justify-center ${
+                  <div className={`relative w-24 sm:w-28 aspect-video rounded-[10px] overflow-hidden shrink-0 flex items-center justify-center ${
                     ep.id === episodeId ? "bg-gradient-to-br from-accent/30 to-primary/30" : "bg-gradient-to-br from-white/5 to-white/10"
                   }`}>
+                    {(ep.thumbnail_url || epFallback) && (
+                      <img
+                        src={ep.thumbnail_url || epFallback}
+                        alt={ep.title || `Episode ${ep.episode_number}`}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        loading="lazy"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                     {ep.id === episodeId ? (
-                      <div className="w-8 h-8 rounded-full bg-accent/30 flex items-center justify-center backdrop-blur-sm border border-accent/30">
+                      <div className="relative w-8 h-8 rounded-full bg-accent/40 flex items-center justify-center backdrop-blur-sm border border-accent/50">
                         <Pause className="w-3 h-3 text-accent fill-current" />
                       </div>
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm border border-white/20 shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+                      <div className="relative w-8 h-8 rounded-full bg-white/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm border border-white/30 shadow-[0_0_15px_rgba(255,255,255,0.2)]">
                         <Play className="w-3 h-3 text-white fill-current ml-0.5" />
                       </div>
                     )}

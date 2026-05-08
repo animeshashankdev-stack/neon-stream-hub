@@ -1,23 +1,27 @@
 
 
-The function returns 401/403/500 with non-2xx, which supabase-js surfaces as "Edge Function returned a non-2xx status code" without the body. Two issues likely:
-
-1. `supabase/config.toml` sets `verify_jwt = true` for `jikan-enrich`. Combined with the function also checking auth manually — if the client invoke isn't passing auth properly or the user isn't admin, it 401/403s.
-2. Even when reachable, errors return non-2xx so the client shows the generic message.
-
-Fix: always return HTTP 200 with `{ ok, error, ...stats }` so the UI can show the real reason. Also wrap the long-running loop with a small batch limit + better logging so we can see progress.
+The Watch page currently doesn't show poster/banner art at all, and the episode list uses solid color tiles instead of `episodes.thumbnail_url`. Plus the layout breaks below ~lg (sidebar pinned at 400px, hard-coded heights, controls cramped).
 
 ## Plan
 
-Edit `supabase/functions/jikan-enrich/index.ts`:
-- Add `respond(ok, payload)` helper that always returns 200.
-- Replace all `status: 401/403/500` returns with `respond(false, { error, stage })`.
-- Add try/catch around per-row work; collect errors into array; never throw out.
-- Add optional `?limit=N` query param (default 50) to avoid timeouts on large catalogs.
-- Log `console.log` per row for dashboard visibility.
+### 1. Display real images from DB (`src/pages/Watch.tsx`)
+- **Player area background** (when no stream loaded / loading): use `content.banner_url` (fallback `poster_url`) as a blurred backdrop instead of plain gradient.
+- **Info section**: add a **poster column** showing `content.poster_url` next to title/description (hidden on mobile, shown ≥md).
+- **Episode list thumbnails**: replace the solid-color placeholder div with `<img src={ep.thumbnail_url ?? content?.thumbnail_url ?? content?.poster_url}>` covering the 16:9 tile, with the play/pause overlay on top. Lazy-load + `onError` falls back to a gradient.
 
-Edit `src/pages/Admin.tsx`:
-- Read `data.ok` from response; show toast with `data.error` when `ok=false`, else show `updated/skipped/failed/episodesUpdated` summary.
+(Hooks `useContentDetail` already returns `poster_url/banner_url/thumbnail_url` cleaned via `resolveImages`, and `useEpisodes` returns `thumbnail_url` — no hook changes needed.)
 
-No DB or config changes needed (`verify_jwt = true` is fine — function still validates admin role internally).
+### 2. Make layout fully responsive
+- Container: switch from `flex-col lg:flex-row` to `flex-col xl:flex-row` so the episodes panel doesn't squeeze the player on tablets; sidebar width `w-full xl:w-[380px]`.
+- Player container: replace `aspect-video md:aspect-auto md:h-[58vh]` with `aspect-video lg:aspect-auto lg:h-[60vh] xl:h-[65vh]` and add `max-h-[80vh]`.
+- Top bar: allow wrap, shrink the title block, hide breadcrumb dot on xs, server/lang badges already responsive — keep as is.
+- Control bar: tighten paddings on `<sm`, stack volume below on very narrow screens (already hidden — keep).
+- Info section padding: `p-4 sm:p-6 md:p-8 lg:p-12`.
+- Episode list `max-h`: switch `max-h-[500px]` to `max-h-[60vh] xl:max-h-[70vh]`.
+- Title sizes: `text-xl sm:text-2xl md:text-3xl lg:text-4xl`.
+- Description: `text-sm md:text-base` (keep) but add `line-clamp-4 md:line-clamp-none` for mobile.
+
+### Files
+- **Edited**: `src/pages/Watch.tsx`
+- No DB changes, no hook changes, no new deps.
 
