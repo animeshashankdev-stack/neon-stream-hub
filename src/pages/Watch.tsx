@@ -324,6 +324,9 @@ const Watch = () => {
             ref={videoRef}
             className="absolute inset-0 w-full h-full object-contain bg-black z-0"
             playsInline
+            controlsList="nodownload noremoteplayback"
+            disablePictureInPicture={false}
+            onContextMenu={(e) => e.preventDefault()}
             onClick={togglePlay}
           />
         ) : null}
