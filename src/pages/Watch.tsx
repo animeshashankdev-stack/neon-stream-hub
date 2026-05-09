@@ -6,6 +6,8 @@ import {
   Settings, Subtitles, MessageSquare,
 } from "lucide-react";
 import { useContentDetail, useEpisodes, useVideoServers } from "@/hooks/useContent";
+import { useStreamToken } from "@/hooks/useStreamToken";
+import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -91,6 +93,19 @@ const Watch = () => {
   const streamUrl = resolveStreamUrl(rawUrl);
   const useIframe = isEmbedUrl(streamUrl);
 
+  // Hardened streaming: for direct video streams, route through signed proxy
+  const { mutateAsync: issueToken } = useStreamToken();
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  useEffect(() => {
+    setSignedUrl(null);
+    if (useIframe || !activeServer?.id || !episodeId) return;
+    let cancelled = false;
+    issueToken({ episodeId, serverId: activeServer.id })
+      .then((r) => { if (!cancelled) setSignedUrl(r.url); })
+      .catch(() => { if (!cancelled) setSignedUrl(streamUrl); /* fall back to raw */ });
+    return () => { cancelled = true; };
+  }, [useIframe, activeServer?.id, episodeId, issueToken, streamUrl]);
+
   // reset error + restart attempt when switching server / episode
   useEffect(() => {
     setIframeError(false);
@@ -160,20 +175,21 @@ const Watch = () => {
     if (useIframe || !streamUrl) return;
     const video = videoRef.current;
     if (!video) return;
-    if (streamUrl.endsWith(".m3u8")) {
+    const playUrl = signedUrl || streamUrl;
+    if (streamUrl.endsWith(".m3u8") || (signedUrl && signedUrl.includes("stream-proxy"))) {
       import("hls.js").then(({ default: Hls }) => {
         if (Hls.isSupported()) {
           const hls = new Hls();
-          hls.loadSource(streamUrl);
+          hls.loadSource(playUrl);
           hls.attachMedia(video);
         } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-          video.src = streamUrl;
+          video.src = playUrl;
         }
       });
     } else {
-      video.src = streamUrl;
+      video.src = playUrl;
     }
-  }, [streamUrl, useIframe]);
+  }, [streamUrl, useIframe, signedUrl]);
 
   useEffect(() => {
     const video = videoRef.current;
