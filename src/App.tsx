@@ -16,6 +16,9 @@ import Genres from "./pages/Genres";
 import Admin from "./pages/Admin";
 import Live from "./pages/Live";
 import LiveWatch from "./pages/LiveWatch";
+import Manga from "./pages/Manga";
+import MangaDetail from "./pages/MangaDetail";
+import MangaReader from "./pages/MangaReader";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +48,9 @@ const App = () => (
             <Route path="/admin" element={<Admin />} />
             <Route path="/live" element={<Live />} />
             <Route path="/live/:channelId" element={<LiveWatch />} />
+            <Route path="/manga" element={<Manga />} />
+            <Route path="/manga/:id" element={<MangaDetail />} />
+            <Route path="/manga/:id/:chapterId" element={<MangaReader />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
