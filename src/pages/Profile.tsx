@@ -1,7 +1,6 @@
 import { Navigate, Link } from "react-router-dom";
 import { User, Star, Clock, Bookmark, Play, Award, Settings } from "lucide-react";
 import Navbar from "@/components/Navbar";
-import BottomNav from "@/components/BottomNav";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile, useWatchHistory } from "@/hooks/useWatchHistory";

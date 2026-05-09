@@ -1,7 +1,6 @@
 import { Link, Navigate } from "react-router-dom";
 import { Bookmark, Plus } from "lucide-react";
 import Navbar from "@/components/Navbar";
-import BottomNav from "@/components/BottomNav";
 import Footer from "@/components/Footer";
 import ContentCard from "@/components/ContentCard";
 import SkeletonCard from "@/components/SkeletonCard";

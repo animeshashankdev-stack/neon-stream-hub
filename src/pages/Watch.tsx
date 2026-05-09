@@ -7,7 +7,6 @@ import {
 } from "lucide-react";
 import { useContentDetail, useEpisodes, useVideoServers } from "@/hooks/useContent";
 import { useStreamToken } from "@/hooks/useStreamToken";
-import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 

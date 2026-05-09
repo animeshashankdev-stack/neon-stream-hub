@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
-import BottomNav from "@/components/BottomNav";
 import HeroBanner from "@/components/HeroBanner";
 import ContentCarousel from "@/components/ContentCarousel";
 import ContentCard from "@/components/ContentCard";
