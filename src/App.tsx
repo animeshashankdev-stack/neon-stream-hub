@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -20,12 +20,22 @@ import Manga from "./pages/Manga";
 import MangaDetail from "./pages/MangaDetail";
 import MangaReader from "./pages/MangaReader";
 import NotFound from "./pages/NotFound";
+import BottomNav from "./components/BottomNav";
 
 const queryClient = new QueryClient();
 
 const PageViewTracker = () => {
   usePageView();
   return null;
+};
+
+const GlobalBottomNav = () => {
+  const { pathname } = useLocation();
+  // Hide on immersive screens (player, reader, auth)
+  if (/^\/watch\//.test(pathname) || /^\/live\/[^/]+/.test(pathname) || /^\/manga\/[^/]+\/[^/]+/.test(pathname) || pathname === "/auth") {
+    return null;
+  }
+  return <BottomNav />;
 };
 
 const App = () => (
@@ -53,6 +63,7 @@ const App = () => (
             <Route path="/manga/:id/:chapterId" element={<MangaReader />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <GlobalBottomNav />
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
