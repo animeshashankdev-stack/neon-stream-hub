@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Play, Plus, Check, Star, Clock, Calendar, Globe, ChevronDown, Share2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import BottomNav from "@/components/BottomNav";
 import Footer from "@/components/Footer";
 import ContentCard from "@/components/ContentCard";
 import { useContentDetail, useEpisodes, useRecommendations } from "@/hooks/useContent";

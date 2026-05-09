@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
+import BottomNav from "@/components/BottomNav";
 import Footer from "@/components/Footer";
 import ContentCard from "@/components/ContentCard";
 import SkeletonCard from "@/components/SkeletonCard";

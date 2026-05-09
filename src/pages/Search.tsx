@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Search as SearchIcon, Filter, Star, Mic, Play } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
+import BottomNav from "@/components/BottomNav";
 import Footer from "@/components/Footer";
 import { useContentList, useGenres } from "@/hooks/useContent";
 

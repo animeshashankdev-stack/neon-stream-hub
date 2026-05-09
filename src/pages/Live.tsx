@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Search, Tv, Loader2, Radio, Star, ChevronDown, Check } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import BottomNav from "@/components/BottomNav";
 import Footer from "@/components/Footer";
 import { useIPTV, type ResolvedChannel } from "@/hooks/useIPTV";
 import { useChannelFavorites, useBrokenChannels } from "@/hooks/useChannelFavorites";
