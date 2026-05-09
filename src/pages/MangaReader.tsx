@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, Maximize2, Layout } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, Layout } from "lucide-react";
 import { useChapterPages, useMangaChapters } from "@/hooks/useManga";
 import { useSaveMangaProgress } from "@/hooks/useMangaProgress";
 
