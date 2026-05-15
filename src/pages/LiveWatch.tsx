@@ -5,6 +5,8 @@ import Navbar from "@/components/Navbar";
 import { useIPTV } from "@/hooks/useIPTV";
 import { useChannelFavorites, markChannelBroken } from "@/hooks/useChannelFavorites";
 import { useEPG, getNowNext } from "@/hooks/useEPG";
+import { useLiveToken } from "@/hooks/useLiveToken";
+import { useAuth } from "@/contexts/AuthContext";
 
 const fmtTime = (d: Date) => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
@@ -14,6 +16,9 @@ const LiveWatch = () => {
   const { data, isLoading } = useIPTV();
   const { has, toggle } = useChannelFavorites();
   const { data: epg } = useEPG(channelId);
+  const { user } = useAuth();
+  const { mutateAsync: signLive } = useLiveToken();
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
 
   const channel = data?.channels.find((c) => c.id === channelId);
 
@@ -25,7 +30,19 @@ const LiveWatch = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setSignedUrl(null);
     if (!channel) return;
+    if (!user) { setError("Sign in required to watch live channels."); setLoading(false); return; }
+    let cancelled = false;
+    signLive({ channelUrl: channel.stream.url })
+      .then((r) => { if (!cancelled) setSignedUrl(r.url); })
+      .catch(() => { if (!cancelled) { setError("Failed to authorize stream."); setLoading(false); } });
+    return () => { cancelled = true; };
+  }, [channel?.id, channel?.stream.url, user, signLive]);
+
+  useEffect(() => {
+    if (!channel) return;
+    if (!signedUrl) return;
     let hls: any = null;
     let cancelled = false;
     const video = videoRef.current;
@@ -37,7 +54,7 @@ const LiveWatch = () => {
       if (cancelled) return;
       if (Hls.isSupported()) {
         hls = new Hls({ enableWorker: true, lowLatencyMode: true });
-        hls.loadSource(channel.stream.url);
+        hls.loadSource(signedUrl);
         hls.attachMedia(video);
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
           setLoading(false);
@@ -51,7 +68,7 @@ const LiveWatch = () => {
           }
         });
       } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-        video.src = channel.stream.url;
+        video.src = signedUrl;
         video.addEventListener("loadedmetadata", () => { setLoading(false); video.play().catch(() => {}); });
         video.addEventListener("error", () => {
           markChannelBroken(channel.id);
@@ -69,7 +86,7 @@ const LiveWatch = () => {
       if (hls) hls.destroy();
       if (video) { video.pause(); video.removeAttribute("src"); video.load(); }
     };
-  }, [channel?.id, channel?.stream.url]);
+  }, [channel?.id, signedUrl]);
 
   useEffect(() => {
     const handler = () => setFullscreen(!!document.fullscreenElement);
