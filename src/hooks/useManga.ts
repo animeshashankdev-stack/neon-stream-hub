@@ -1,13 +1,22 @@
 import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const SUPABASE_URL = "https://zoduthqkxhphvlldxyjr.supabase.co";
 const PROXY = `${SUPABASE_URL}/functions/v1/manga-proxy`;
 
 const ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpvZHV0aHFreGhwaHZsbGR4eWpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwODU0ODIsImV4cCI6MjA5MTY2MTQ4Mn0.R3wnKBwOt1WfTJVfFr3sPWydUFtE9cp2PohjEy4R6H4";
 
+async function authedHeaders(): Promise<Record<string, string>> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error("AUTH_REQUIRED");
+  return { apikey: ANON, Authorization: `Bearer ${token}` };
+}
+
 async function mdFetch(path: string): Promise<any> {
+  const headers = await authedHeaders();
   const r = await fetch(`${PROXY}/mangadex${path}`, {
-    headers: { apikey: ANON, Authorization: `Bearer ${ANON}` },
+    headers,
   });
   if (!r.ok) throw new Error(`MangaDex ${r.status}`);
   return r.json();
@@ -133,7 +142,16 @@ export function useChapterPages(chapterId: string | undefined) {
       const baseUrl = j.baseUrl as string;
       const hash = j.chapter?.hash as string;
       const files = (j.chapter?.data || []) as string[];
-      return files.map((f) => `${PROXY}/page?u=${encodeURIComponent(`${baseUrl}/data/${hash}/${f}`)}`);
+      // Page images need auth header; fetch through proxy as blobs
+      const headers = await authedHeaders();
+      const urls = await Promise.all(files.map(async (f) => {
+        const target = `${baseUrl}/data/${hash}/${f}`;
+        const r = await fetch(`${PROXY}/page?u=${encodeURIComponent(target)}`, { headers });
+        if (!r.ok) throw new Error(`Page ${r.status}`);
+        const blob = await r.blob();
+        return URL.createObjectURL(blob);
+      }));
+      return urls;
     },
   });
 }

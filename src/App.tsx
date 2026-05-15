@@ -21,6 +21,7 @@ import MangaDetail from "./pages/MangaDetail";
 import MangaReader from "./pages/MangaReader";
 import NotFound from "./pages/NotFound";
 import BottomNav from "./components/BottomNav";
+import { RequireAuth } from "./components/RequireAuth";
 
 const queryClient = new QueryClient();
 
@@ -58,9 +59,9 @@ const App = () => (
             <Route path="/admin" element={<Admin />} />
             <Route path="/live" element={<Live />} />
             <Route path="/live/:channelId" element={<LiveWatch />} />
-            <Route path="/manga" element={<Manga />} />
-            <Route path="/manga/:id" element={<MangaDetail />} />
-            <Route path="/manga/:id/:chapterId" element={<MangaReader />} />
+            <Route path="/manga" element={<RequireAuth><Manga /></RequireAuth>} />
+            <Route path="/manga/:id" element={<RequireAuth><MangaDetail /></RequireAuth>} />
+            <Route path="/manga/:id/:chapterId" element={<RequireAuth><MangaReader /></RequireAuth>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <GlobalBottomNav />

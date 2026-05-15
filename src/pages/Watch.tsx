@@ -296,7 +296,7 @@ const Watch = () => {
   const epFallback = content?.thumbnail_url || content?.poster_url || "";
 
   return (
-    <div className="min-h-screen bg-[#080818] text-white font-body selection:bg-accent/30 flex flex-col">
+    <div className="senpai-root min-h-screen bg-[#080818] text-white font-body selection:bg-accent/30 flex flex-col">
       {/* Video Player Area */}
       <div
         ref={containerRef}
@@ -588,7 +588,8 @@ const Watch = () => {
       </div>
 
       {/* Info Section Below Player */}
-      <div className="flex-1 bg-gradient-to-br from-[#080818] to-[#0A0A1A] p-4 sm:p-6 md:p-8 lg:p-12 relative z-10">
+      <div className="flex-1 relative z-10 p-4 sm:p-6 md:p-8 lg:p-12 senpai-aurora">
+        <div className="pointer-events-none absolute inset-0 senpai-bg-grid opacity-30" />
         <div className="max-w-7xl mx-auto flex flex-col xl:flex-row gap-6 md:gap-8 xl:gap-12">
 
           {/* Left Main Info */}
@@ -603,10 +604,12 @@ const Watch = () => {
             )}
             <div className="flex-1 space-y-5 min-w-0">
             {/* Breadcrumb */}
-            <div className="flex items-center gap-2 text-sm font-semibold text-white/60 tracking-wide">
-              <Link to={`/content/${contentId}`} className="text-accent hover:underline">{content?.title}</Link>
-              <span>/</span>
+            <div className="flex items-center gap-2 text-[11px] senpai-mono uppercase tracking-[0.3em] text-white/55">
+              <Link to={`/content/${contentId}`} className="text-fuchsia-300 hover:text-fuchsia-200">{content?.title}</Link>
+              <span className="text-white/30">/</span>
               <span>Season {currentEp?.season_number || 1}</span>
+              <span className="text-white/30">/</span>
+              <span className="senpai-jp text-white/70">第{currentEp?.episode_number || 1}話</span>
             </div>
 
             <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-display font-black text-white tracking-tight drop-shadow-md">
@@ -642,8 +645,11 @@ const Watch = () => {
           </div>
 
           {/* Right Sidebar — Episodes */}
-          <div className="w-full xl:w-[380px] shrink-0 space-y-4">
-            <h3 className="text-lg font-display font-black text-white tracking-wide uppercase">Episodes</h3>
+            <div className="w-full xl:w-[380px] shrink-0 space-y-4">
+              <h3 className="text-lg font-display font-black text-white tracking-wide uppercase flex items-center gap-3">
+                Episodes
+                <span className="senpai-mono text-[10px] text-white/40 tracking-[0.3em]">{filteredEpisodes.length} EPS</span>
+              </h3>
 
             {/* Season Tabs */}
             {seasons.length > 1 && (
@@ -665,7 +671,7 @@ const Watch = () => {
             )}
 
             {/* Episode List */}
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[20px] p-2 flex flex-col gap-1.5 max-h-[60vh] xl:max-h-[70vh] overflow-y-auto scrollbar-hide">
+            <div className="senpai-glass rounded-[20px] p-2 flex flex-col gap-1.5 max-h-[60vh] xl:max-h-[70vh] overflow-y-auto scrollbar-hide">
               {filteredEpisodes.map((ep) => (
                 <Link
                   key={ep.id}

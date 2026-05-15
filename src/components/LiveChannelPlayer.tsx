@@ -3,6 +3,9 @@ import { X, Maximize2, Minimize, Volume2, VolumeX, Loader2, AlertTriangle, Star 
 import type { ResolvedChannel } from "@/hooks/useIPTV";
 import { useChannelFavorites, markChannelBroken } from "@/hooks/useChannelFavorites";
 import { useEPG, getNowNext } from "@/hooks/useEPG";
+import { useLiveToken } from "@/hooks/useLiveToken";
+import { useAuth } from "@/contexts/AuthContext";
+import { Link } from "react-router-dom";
 
 interface Props {
   channel: ResolvedChannel;
@@ -20,6 +23,10 @@ const LiveChannelPlayer = ({ channel, onClose }: Props) => {
   const [error, setError] = useState<string | null>(null);
   const { has, toggle } = useChannelFavorites();
   const { data: epg } = useEPG(channel.id);
+  const { user } = useAuth();
+  const { mutateAsync: signLive } = useLiveToken();
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [authBlock, setAuthBlock] = useState(false);
   const { now, next } = getNowNext(epg);
   const nowProgress = now ? Math.min(100, ((Date.now() - now.start.getTime()) / (now.stop.getTime() - now.start.getTime())) * 100) : 0;
 
@@ -30,12 +37,23 @@ const LiveChannelPlayer = ({ channel, onClose }: Props) => {
   }, [onClose]);
 
   useEffect(() => {
+    setSignedUrl(null);
+    setAuthBlock(false);
+    if (!user) { setAuthBlock(true); setLoading(false); return; }
+    let cancelled = false;
+    signLive({ channelUrl: channel.stream.url })
+      .then((r) => { if (!cancelled) setSignedUrl(r.url); })
+      .catch(() => { if (!cancelled) { setError("Failed to authorize stream."); setLoading(false); } });
+    return () => { cancelled = true; };
+  }, [channel.stream.url, user, signLive]);
+
+  useEffect(() => {
     let hls: any = null;
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || !signedUrl) return;
     setLoading(true); setError(null);
 
-    const url = channel.stream.url;
+    const url = signedUrl;
     let cancelled = false;
 
     (async () => {
@@ -72,7 +90,7 @@ const LiveChannelPlayer = ({ channel, onClose }: Props) => {
       if (hls) hls.destroy();
       if (video) { video.pause(); video.removeAttribute("src"); video.load(); }
     };
-  }, [channel.stream.url]);
+  }, [signedUrl, channel.id]);
 
   useEffect(() => {
     const handler = () => setFullscreen(!!document.fullscreenElement);
@@ -95,6 +113,16 @@ const LiveChannelPlayer = ({ channel, onClose }: Props) => {
         onClick={(e) => e.stopPropagation()}
       >
         <video ref={videoRef} className="w-full h-full" playsInline autoPlay muted={muted} controls={false} />
+
+        {authBlock && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-30">
+            <div className="text-center max-w-sm px-6">
+              <p className="text-white font-bold mb-2">Sign in required</p>
+              <p className="text-white/60 text-sm mb-4">Live channels require a Senpai account.</p>
+              <Link to="/auth" className="inline-block px-5 py-2 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-bold text-sm">Sign in</Link>
+            </div>
+          </div>
+        )}
 
         {/* Top bar */}
         <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/80 to-transparent flex items-center justify-between gap-3">
