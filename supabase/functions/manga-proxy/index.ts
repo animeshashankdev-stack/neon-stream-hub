@@ -1,4 +1,8 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.0";
 import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.95.0/cors";
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 
 const MANGADEX_BASE = "https://api.mangadex.org";
 const JIKAN_BASE = "https://api.jikan.moe/v4";
@@ -37,6 +41,22 @@ function rateLimited(ip: string): boolean {
   return b.count > RATE_LIMIT;
 }
 
+async function requireUser(req: Request): Promise<string | null> {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) return null;
+  const token = authHeader.replace("Bearer ", "");
+  // Reject the anon key — must be a real user JWT
+  if (token === SUPABASE_ANON_KEY) return null;
+  try {
+    const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { headers: { Authorization: authHeader } } });
+    const { data, error } = await client.auth.getClaims(token);
+    if (error || !data?.claims?.sub) return null;
+    return data.claims.sub as string;
+  } catch {
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -56,6 +76,17 @@ Deno.serve(async (req) => {
   const subPath = "/" + segments.slice(2).join("/");
 
   try {
+    // Auth required for everything except public covers (used in <img> tags)
+    if (provider !== "cover") {
+      const userId = await requireUser(req);
+      if (!userId) {
+        return new Response(JSON.stringify({ error: "Authentication required" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     if (provider === "mangadex") {
       if (!isAllowed(subPath)) {
         return new Response(JSON.stringify({ error: "Path not allowed" }), {
