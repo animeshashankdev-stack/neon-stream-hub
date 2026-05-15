@@ -14,3 +14,9 @@ verify_jwt = false
 
 [functions.iptv-sync]
 verify_jwt = false
+
+[functions.live-token]
+verify_jwt = false
+
+[functions.iptv-proxy]
+verify_jwt = false
