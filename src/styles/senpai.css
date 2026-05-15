@@ -1,0 +1,211 @@
+@import url("https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Bowlby+One&family=Noto+Sans+JP:wght@400;500;700;900&family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Caveat:wght@400;700&family=Archivo+Black&display=swap");
+
+.senpai-root {
+  --senpai-bg: #07060a;
+  --senpai-bg-2: #0d0a14;
+  --senpai-bg-3: #15101e;
+  --senpai-paper: #f4ede2;
+  --senpai-paper-2: #ebe2d2;
+  --senpai-surface: rgba(20, 15, 32, 0.55);
+  --senpai-surface-strong: rgba(28, 22, 48, 0.85);
+  --senpai-border: rgba(255, 255, 255, 0.08);
+  --senpai-border-strong: rgba(255, 255, 255, 0.18);
+  --senpai-text: #f6f1ff;
+  --senpai-text-dim: #b9b1d4;
+  --senpai-text-muted: #6f6a8b;
+
+  --senpai-violet: #a16bff;
+  --senpai-violet-2: #7a3df5;
+  --senpai-teal: #2af0d9;
+  --senpai-fuchsia: #ff48d6;
+  --senpai-pink: #ff5d9f;
+  --senpai-amber: #ffc857;
+  --senpai-orange: #ff7a2e;
+  --senpai-red: #ff3b5b;
+  --senpai-green: #3ddc84;
+  --senpai-ink: #0a0710;
+
+  --senpai-grad-aurora:
+    radial-gradient(1200px 700px at 8% -10%, rgba(161,107,255,0.55), transparent 60%),
+    radial-gradient(1100px 600px at 100% 0%, rgba(42,240,217,0.22), transparent 60%),
+    radial-gradient(900px 900px at 50% 110%, rgba(255,72,214,0.25), transparent 60%),
+    radial-gradient(600px 600px at 50% 50%, rgba(122,61,245,0.10), transparent 70%);
+  --senpai-grad-fire: linear-gradient(135deg, #ff7a2e 0%, #ff3b5b 50%, #ff48d6 100%);
+  --senpai-grad-cyber: linear-gradient(135deg, #a16bff 0%, #ff48d6 50%, #2af0d9 100%);
+  --senpai-grad-card: linear-gradient(135deg, rgba(161,107,255,0.18), rgba(42,240,217,0.10));
+
+  --senpai-shadow-glow: 0 0 0 1px rgba(161,107,255,0.4), 0 22px 60px -22px rgba(122,61,245,0.55), 0 8px 28px -8px rgba(0,0,0,0.6);
+  --senpai-shadow-card: 0 30px 60px -25px rgba(0,0,0,0.8);
+
+  --senpai-display: "Anton", "Bebas Neue", "Archivo Black", system-ui, sans-serif;
+  --senpai-body: "Inter", "Space Grotesk", system-ui, sans-serif;
+  --senpai-jp: "Noto Sans JP", sans-serif;
+  --senpai-mono: "JetBrains Mono", monospace;
+  --senpai-hand: "Caveat", cursive;
+
+  font-family: var(--senpai-body);
+  background: var(--senpai-bg);
+  color: var(--senpai-text);
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.005em;
+}
+
+.senpai-display { font-family: var(--senpai-display); letter-spacing: -0.01em; }
+.senpai-bowlby { font-family: "Bowlby One", "Anton", sans-serif; letter-spacing: -0.02em; }
+.senpai-archivo { font-family: "Archivo Black", "Anton", sans-serif; }
+.senpai-jp { font-family: var(--senpai-jp); }
+.senpai-mono { font-family: var(--senpai-mono); }
+.senpai-hand { font-family: var(--senpai-hand); }
+
+.senpai-glass {
+  background: var(--senpai-surface);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  border: 1px solid var(--senpai-border);
+}
+
+.senpai-glow { box-shadow: var(--senpai-shadow-glow); }
+.senpai-card-shadow { box-shadow: var(--senpai-shadow-card); }
+
+.senpai-grad-text {
+  background: linear-gradient(120deg, #c8a8ff 0%, #ff8ae0 50%, #5ff0db 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.senpai-grad-text-fire {
+  background: var(--senpai-grad-fire);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.senpai-grad-text-cyber {
+  background: var(--senpai-grad-cyber);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.senpai-aurora { background: var(--senpai-grad-aurora); }
+
+.senpai-stroke-text {
+  -webkit-text-stroke: 2px rgba(255,255,255,0.85);
+  color: transparent;
+}
+.senpai-stroke-text-violet {
+  -webkit-text-stroke: 2px rgba(161,107,255,0.6);
+  color: transparent;
+}
+
+/* Halftone dots overlay */
+.senpai-halftone {
+  background-image: radial-gradient(rgba(255,255,255,0.18) 1px, transparent 1.4px);
+  background-size: 6px 6px;
+}
+.senpai-halftone-dark {
+  background-image: radial-gradient(rgba(0,0,0,0.45) 1px, transparent 1.4px);
+  background-size: 4px 4px;
+}
+
+/* Paper texture */
+.senpai-paper {
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(0,0,0,0.04), transparent 60%),
+    radial-gradient(ellipse at 80% 70%, rgba(0,0,0,0.06), transparent 70%),
+    repeating-linear-gradient(0deg, rgba(0,0,0,0.012) 0 1px, transparent 1px 3px),
+    var(--senpai-paper);
+  color: var(--senpai-ink);
+}
+
+.senpai-noise::before {
+  content: ""; position: absolute; inset: 0;
+  background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 3px 3px;
+  pointer-events: none; mix-blend-mode: overlay;
+}
+
+/* Sticker chip — looks like a printed price sticker */
+.senpai-sticker {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--senpai-amber);
+  color: var(--senpai-ink);
+  font-family: var(--senpai-display);
+  letter-spacing: 0.02em;
+  padding: 0.3rem 0.7rem;
+  border-radius: 8px;
+  box-shadow: 3px 3px 0 0 rgba(0,0,0,0.6), inset 0 0 0 2px rgba(0,0,0,0.15);
+  transform: rotate(-6deg);
+}
+.senpai-sticker-pink { background: var(--senpai-fuchsia); color: white; }
+.senpai-sticker-violet { background: var(--senpai-violet); color: white; }
+.senpai-sticker-teal { background: var(--senpai-teal); color: var(--senpai-ink); }
+
+/* Marquee */
+@keyframes senpai-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.senpai-marquee-track { animation: senpai-marquee 40s linear infinite; }
+
+/* Animations */
+@keyframes senpai-spin { to { transform: rotate(360deg); } }
+@keyframes senpai-pulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
+@keyframes senpai-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes senpai-shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
+@keyframes senpai-flicker { 0%,100% { opacity: 1; } 45% { opacity: .92; } 47% { opacity: .6; } 49% { opacity: .98; } }
+@keyframes senpai-glow-pulse { 0%,100% { box-shadow: 0 0 0 rgba(161,107,255,0.0), 0 0 24px rgba(161,107,255,0.45); } 50% { box-shadow: 0 0 0 rgba(161,107,255,0.0), 0 0 60px rgba(255,72,214,0.55); } }
+@keyframes senpai-float-particle { 0% { transform: translateY(0) translateX(0); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(-200px) translateX(30px); opacity: 0; } }
+
+.senpai-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  background-size: 200% 100%;
+  animation: senpai-shimmer 2s linear infinite;
+}
+
+.senpai-scrollbar::-webkit-scrollbar { height: 8px; width: 8px; }
+.senpai-scrollbar::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #7a3df5, #ff48d6); border-radius: 999px; }
+.senpai-scrollbar::-webkit-scrollbar-track { background: transparent; }
+
+/* Poster card with hover tilt */
+.senpai-poster {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  isolation: isolate;
+  transform: perspective(800px) rotateY(0) rotateX(0);
+  transition: transform 0.4s cubic-bezier(.2,.8,.2,1), box-shadow 0.4s;
+}
+.senpai-poster:hover {
+  transform: perspective(800px) rotateY(-4deg) rotateX(2deg) translateY(-6px) scale(1.02);
+  box-shadow: 0 30px 60px -20px rgba(122,61,245,0.6), 0 0 0 1px rgba(161,107,255,0.4);
+}
+.senpai-poster::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(160deg, rgba(255,255,255,0.16), transparent 38%);
+  opacity: 0;
+  transition: opacity 0.4s;
+  pointer-events: none;
+}
+.senpai-poster:hover::after { opacity: 1; }
+
+/* Duotone hover for posters: applies a subtle violet/teal tint */
+.senpai-duotone img {
+  transition: filter 0.4s, transform 0.4s;
+}
+.senpai-duotone:hover img {
+  filter: contrast(1.05) saturate(1.15) hue-rotate(-2deg);
+}
+
+/* Big text outline character */
+.senpai-mega {
+  font-family: var(--senpai-display);
+  font-size: clamp(64px, 9vw, 180px);
+  line-height: 0.86;
+  letter-spacing: -0.04em;
+  font-weight: 900;
+}
+
+.senpai-bg-grid {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+}

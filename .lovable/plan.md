@@ -1,97 +1,70 @@
-## Senpai.tv — Full Build Plan
+# Senpai redesign + full API lockdown
 
-Goal: Anime from your Supabase, Live TV from iptv-org + admin M3U playlists, Manga from MangaDex (with Jikan covers), unified custom video/manga player, strong anti-scraping, fully responsive, Capacitor-wrapped iOS+Android.
+This is a large change. I'll ship it in 4 phases so the preview never breaks for long.
 
----
+## Phase 1 — Design foundation (one commit)
 
-### 1. Anime (Supabase)
+Create the shared chrome the uploaded pages all import from.
 
-- Use existing `content`, `episodes`, `genres`, `content_genres`, `video_servers`, `watchlist`, `watch_history`.
-- Hooks: `useContent`, `useEpisodes(contentId)`, `useServers(episodeId)`, `useWatchlist`, `useWatchHistory` — all already mostly present, will be reviewed and tightened.
-- Pages: Home, Browse, Detail, Watch, Watchlist (already exist) — wire to real `poster_url / banner_url / thumbnail_url`, add genre filter, ratings, multi-server picker (from `video_servers`).
-- Resume playback from `watch_history.progress_seconds`; auto-save every 10s.
+- `src/styles/senpai.css` — port the contents of the uploaded `_group.css` (CSS variables, fonts, `.senpai-*` utility classes, aurora/halftone/noise/scrollbar). Imported once from `src/main.tsx`.
+- `src/components/senpai/AppShell.tsx` — top nav + side rail + aurora background. Real `<Link>` routing (Home `/`, Browse `/search`, Live `/live`, Manga `/manga`, Library `/watchlist`, Profile `/profile`, Settings (new), Admin `/admin`). Wires the real `useAuth()` user into the avatar.
+- `src/components/senpai/Logo.tsx` — `SenpaiLogo` component.
+- `src/components/senpai/Loader.tsx` — `SenpaiLoader` from upload (replaces ad-hoc spinners).
+- `src/components/senpai/primitives.tsx` — `GlassCard`, `NeonChip`, `ScoreBadge`, `YearSticker`, `PrimaryButton`, `GhostButton`, `LiveDot`. Pure presentational, accept children/props.
 
-### 2. Live TV (hybrid)
+No mock `_shared/data` module — every page reads from real hooks.
 
-- **Default source**: iptv-org public API (already wired via `useIPTV`).
-- **Admin source**: parse user-added M3U playlists in `iptv_playlists` → `iptv_channels` via a new edge function `iptv-sync` (admin-only, uses service role). Also parses XMLTV EPG into `iptv_epg_programs`.
-- Live page merges both sources, dedupes by name, lets user filter by country/category/group.
-- `channel_favorites` already syncs to Supabase.
-- Admin → Live TV tab to add/edit playlists and trigger sync.
+## Phase 2 — Page rewrites (one page per commit)
 
-### 3. Manga (MangaDex + Jikan)
+Each page keeps its current route and replaces only the JSX with the uploaded design, swapping mock arrays for real hooks. Order:
 
-- New `useManga` hooks calling MangaDex via a proxy edge function `manga-proxy` (handles rate limits, hides referer, adds correct User-Agent).
-- Jikan used for richer cover art / metadata when MangaDex covers are low-res.
-- Pages: `/manga` (browse), `/manga/:id` (detail + chapters), `/manga/:id/:chapterId` (reader).
-- Reader: vertical webtoon scroll + paged mode toggle, swipe on mobile, virtualized.
-- Progress saved to `manga_progress` (resume on next visit).
+1. **Watch** (`src/pages/Watch.tsx`) — already uses `useStreamToken`. Drop in the new chapter bar / up-next rail / server picker UI but keep the signed-proxy `<video>` element, `controlsList="nodownload"`, no-context-menu, watch-history writes.
+2. **Search** — replace with the upload's overlay-style search; results from `useContent`, `useIPTV`, `useManga`.
+3. **Profile** — bind cover/avatar/display_name/level/xp from `profiles`, history from `watch_history` + `read_history`.
+4. **MangaBrowse** (`src/pages/Manga.tsx`) — feed from `useManga` (MangaDex via `manga-proxy`). Streak from `read_history`.
+5. **MangaDetail** — chapters from `manga-proxy /manga/{id}/feed`.
+6. **MangaReader** — keep the secured page-fetch via `manga-proxy/page`, swap the chrome.
+7. **Settings** (new page `/settings` + route + nav entry) — bound to `profiles` + localStorage prefs.
+8. **AppShell** is already shipped in Phase 1; verify all pages render inside it.
 
-### 4. Custom Universal Player
+`BottomNav` stays for mobile; sidebar shows on `lg+`.
 
-A single `<UniversalPlayer />` component used by Anime, Live TV, and (image variant) Manga.
+## Phase 3 — Full API lockdown
 
-- HLS via hls.js + native Safari fallback.
-- Controls: play/pause, scrub, volume, quality (from `video_servers`), playback speed, captions, PiP, fullscreen, keyboard shortcuts, mobile gestures (double-tap seek, pinch fullscreen).
-- Skip intro / next episode auto-play for anime.
-- Live badge + EPG strip for Live TV.
-- Hardened: disables right-click, blocks `Ctrl+S`/`Ctrl+U`, blurs on tab visibility loss, no `download` attribute, MediaSource only (no raw URL exposure to DOM).
+Goal: the browser never sees a third-party origin URL, and every proxy verifies the caller.
 
-### 5. Strong Anti-Scraping
+Hardening of existing edge functions:
 
-- New edge function `stream-token` issues a short-lived (60s) HMAC-signed JWT bound to `user_id + episode_id + ip` for every play request.
-- New edge function `stream-proxy` validates the token, rate-limits per user (Postgres-based counter), checks `Referer` + `Origin`, and proxies HLS manifest/segments — the actual `stream_url` from `video_servers` never reaches the browser.
-- Episode IDs in URLs replaced with opaque slugs (HMAC of UUID) so `episodes` table can't be enumerated.
-- `STREAM_SIGNING_SECRET` stored as Supabase secret.
-- Edge functions add bot-detection (User-Agent allowlist, basic JS challenge cookie).
-- Watermark overlay on player with user email hash (deters re-streaming).
-- Note: no web player is 100% scrape-proof; this raises the bar significantly.
+- `stream-token` / `stream-proxy`
+  - One-shot tokens: mark `used_at` on first manifest hit; reject reuse for non-segment requests.
+  - Bind to `ip_hash` — `stream-proxy` recomputes hash from `x-forwarded-for` and rejects mismatches.
+  - Reject if `Origin` / `Referer` not in allowlist (preview + published + custom domains).
+  - Strip `Server`, `Via`, upstream URL fragments from rewritten manifests.
+- `manga-proxy`
+  - Require `Authorization` Bearer (verify with `getClaims`) for all `mangadex` / `page` routes. Covers stay public + cached.
+  - Tighten allowlist (already done) + per-user rate limit keyed off `sub`, not IP.
+  - Add `Referer` / `Origin` allowlist check.
+- `iptv-sync` — already admin-only; add audit row to a new `admin_audit` log table (optional).
+- New `iptv-proxy` edge function — proxies live channel `.m3u8` through the same signed-token pattern as `stream-proxy` so raw IPTV URLs never reach the client. `LiveWatch` switches to it.
+- New `live-token` edge function — issues per-channel signed tokens (auth required).
+- Frontend: remove any remaining direct `fetch()` to mangadex/jikan/iptv/raw streams. Grep gate before merge.
 
-### 6. Responsive + Mobile App (Capacitor)
+Config: keep `verify_jwt = false` and validate JWTs in code (signing-keys flow). Add `verify_jwt = false` entries for the new functions in `supabase/config.toml`.
 
-- All pages audited at 360 / 768 / 1024 / 1440 breakpoints.
-- Bottom tab bar on mobile (Home, Browse, Live, Manga, Profile), top nav on desktop.
-- Touch-friendly controls, safe-area insets for notched devices.
-- Capacitor setup:
-  - Install `@capacitor/core`, `@capacitor/cli`, `@capacitor/ios`, `@capacitor/android`.
-  - `capacitor.config.ts` with appId `app.lovable.bc3265f2664042baa9b4f01a2fbceddf`, hot-reload server URL pointing to sandbox preview.
-  - Instructions provided to user for `git pull → npm i → npx cap add ios/android → npx cap sync → npx cap run`.
+## Phase 4 — Verification
 
-### 7. Security hardening (general)
+- `supabase--linter` clean.
+- Manual: log out → confirm `manga-proxy/mangadex/*` returns 401.
+- Manual: copy a stream-proxy URL into an incognito tab → 403 (IP/origin mismatch).
+- Visual QA each redesigned page in the preview.
 
-- All edge functions: validate JWT via `getClaims`, Zod input validation, CORS, rate limit.
-- RLS: existing tables already locked down; add admin-only policies for new sync functions.
-- Add `stream_tokens` table (user_id, token_hash, episode_id, expires_at) to enforce one-time-use tokens.
-- CSP meta tag in `index.html` restricting media sources.
+## Notes / decisions baked in
 
----
+- Kept current routes — no URL changes, no broken bookmarks.
+- Kept Tailwind tokens in `index.css`; the new `.senpai-*` classes live alongside as a parallel utility layer scoped under `.senpai-root`.
+- No new tables required for the redesign. The lockdown adds zero tables (one-shot reuse uses the existing `stream_tokens.used_at` column).
+- I will not pull in the uploaded `_shared/data.ts` mock module — real hooks only, per your answer.
 
-### Technical / files
+## Deliverable order
 
-**New edge functions** (`supabase/functions/`):
-- `iptv-sync/` — admin-only M3U + EPG ingestion
-- `manga-proxy/` — MangaDex/Jikan proxy with caching
-- `stream-token/` — issue signed playback tokens
-- `stream-proxy/` — validate token + proxy HLS
-
-**New migrations**:
-- `stream_tokens` table + RLS
-- Helper SQL function `issue_stream_token` (called by edge fn)
-
-**New hooks**: `useManga`, `useMangaChapters`, `useMangaProgress`, `useStreamToken`, `useEpisodeServers`, `useAdminPlaylists`.
-
-**New components**: `UniversalPlayer`, `MangaReader`, `BottomNav`, `StreamWatermark`, admin `PlaylistManager`.
-
-**Edited**: Home, Live, ContentDetail, Watch, Admin, Navbar, App routes.
-
-**New deps**: `hls.js` (already), `@capacitor/core`, `@capacitor/cli`, `@capacitor/ios`, `@capacitor/android`, `react-window` (manga reader virtualization).
-
-**New secrets needed**: `STREAM_SIGNING_SECRET` (I'll request via add_secret tool).
-
-### Out of scope this pass
-- Watch parties / sync chat
-- Stripe Senpai+ subscription
-- Downloads for offline
-- 3D scroll animations from the reference designs (will add neon/glass polish, not full Three.js)
-
-These can be added in follow-up passes once the core platform is solid.
+I'll start with Phase 1 (foundation) right after you approve. Each subsequent phase will be a separate turn so you can review.
