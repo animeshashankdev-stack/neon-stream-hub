@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { SenpaiLogo } from "./Logo";
 import { useAuth } from "@/contexts/AuthContext";
-import { useAdmin } from "@/hooks/useAdmin";
+import { useIsAdmin } from "@/hooks/useAdmin";
 
 type AppShellProps = {
   children: ReactNode;
@@ -35,7 +35,7 @@ const sideItems = [
 export function AppShell({ children, active = "home", hideNav, hideSidebar, fullBleed, hideAurora }: AppShellProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isAdmin } = useAdmin();
+  const { data: isAdmin } = useIsAdmin();
   const initial = (user?.email?.[0] ?? "S").toUpperCase();
   const handle = user?.user_metadata?.display_name ?? user?.email?.split("@")[0] ?? "Guest";
 
