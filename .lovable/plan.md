@@ -1,70 +1,69 @@
-# Senpai redesign + full API lockdown
+## Scope
 
-This is a large change. I'll ship it in 4 phases so the preview never breaks for long.
+Eight workstreams across UI, security, and SEO. Grouped below.
 
-## Phase 1 — Design foundation (one commit)
+---
 
-Create the shared chrome the uploaded pages all import from.
+## 1. Live routes auth + token caching + auto-refresh
 
-- `src/styles/senpai.css` — port the contents of the uploaded `_group.css` (CSS variables, fonts, `.senpai-*` utility classes, aurora/halftone/noise/scrollbar). Imported once from `src/main.tsx`.
-- `src/components/senpai/AppShell.tsx` — top nav + side rail + aurora background. Real `<Link>` routing (Home `/`, Browse `/search`, Live `/live`, Manga `/manga`, Library `/watchlist`, Profile `/profile`, Settings (new), Admin `/admin`). Wires the real `useAuth()` user into the avatar.
-- `src/components/senpai/Logo.tsx` — `SenpaiLogo` component.
-- `src/components/senpai/Loader.tsx` — `SenpaiLoader` from upload (replaces ad-hoc spinners).
-- `src/components/senpai/primitives.tsx` — `GlassCard`, `NeonChip`, `ScoreBadge`, `YearSticker`, `PrimaryButton`, `GhostButton`, `LiveDot`. Pure presentational, accept children/props.
+- Wrap `/live` and `/live/:channelId` in `<RequireAuth>` in `src/App.tsx`.
+- Update `useLiveToken` to keep an in-memory cache keyed by `channelUrl`; reuse token while `expiresAt - now > 10s`; otherwise mint new.
+- `LiveChannelPlayer`: listen for HLS `ERROR` events (network/manifest 403/410) and auto re-request signed URL, then `hls.loadSource(newUrl)` and `hls.startLoad()`. Also pre-refresh ~10s before known expiry via timer.
 
-No mock `_shared/data` module — every page reads from real hooks.
+## 2. Manga browse — Senpai redesign (auth-gated already)
 
-## Phase 2 — Page rewrites (one page per commit)
+Rewrite `src/pages/Manga.tsx` using `AppShell`, `GlassCard`, `NeonChip`, `senpai-*` utilities from `src/components/senpai/AppShell.tsx`. Keeps `usePopularManga` / `useSearchManga` hooks. No data-layer change.
 
-Each page keeps its current route and replaces only the JSX with the uploaded design, swapping mock arrays for real hooks. Order:
+## 3. Search page — Senpai redesign + real Supabase
 
-1. **Watch** (`src/pages/Watch.tsx`) — already uses `useStreamToken`. Drop in the new chapter bar / up-next rail / server picker UI but keep the signed-proxy `<video>` element, `controlsList="nodownload"`, no-context-menu, watch-history writes.
-2. **Search** — replace with the upload's overlay-style search; results from `useContent`, `useIPTV`, `useManga`.
-3. **Profile** — bind cover/avatar/display_name/level/xp from `profiles`, history from `watch_history` + `read_history`.
-4. **MangaBrowse** (`src/pages/Manga.tsx`) — feed from `useManga` (MangaDex via `manga-proxy`). Streak from `read_history`.
-5. **MangaDetail** — chapters from `manga-proxy /manga/{id}/feed`.
-6. **MangaReader** — keep the secured page-fetch via `manga-proxy/page`, swap the chrome.
-7. **Settings** (new page `/settings` + route + nav entry) — bound to `profiles` + localStorage prefs.
-8. **AppShell** is already shipped in Phase 1; verify all pages render inside it.
+Rewrite `src/pages/Search.tsx` against `useContentList({ query, genre, year, language, type })` and `useGenres()`. Senpai shell + glass filter rail + poster grid using `content.poster_url` / `banner_url` / `thumbnail_url` (already cleaned by `useContent.ts`).
 
-`BottomNav` stays for mobile; sidebar shows on `lg+`.
+Confirm `ContentCard` / poster usage everywhere reads `poster_url` (banner→`banner_url`, thumb→`thumbnail_url`). Existing `useContent.ts` already does the right mapping, so this is a render-layer audit only — no schema changes.
 
-## Phase 3 — Full API lockdown
+## 4. Security fixes (DB + edge)
 
-Goal: the browser never sees a third-party origin URL, and every proxy verifies the caller.
+Migrations:
 
-Hardening of existing edge functions:
+- **stream_tokens**: revoke all client write; rely on service role only. Add explicit `INSERT`/`DELETE` policies denying anon/auth (no policy = denied, but make this explicit via restrictive policies and document).
+- **page_views**: add `user_id uuid` column + bind RLS `INSERT` to `auth.uid() = user_id`; replace "always true" check. Update `usePageView` to send `user_id`.
+- **iptv_channels**: introduce subscription gate. Add `is_premium` check via `has_role` or `profiles.is_premium`. Update `live-token` edge fn to verify caller has `profiles.is_premium = true` OR admin role; reject otherwise.
+- **video_servers**: tighten — change SELECT policy from `true` to `auth.uid() IS NOT NULL`. Stream URL access only via `stream-token` edge fn (already enforced).
+- **SECURITY DEFINER functions**: `REVOKE EXECUTE ... FROM PUBLIC, anon, authenticated` for `has_role`, `is_moderator`, `prevent_profile_privilege_escalation`, `handle_new_user`, `update_updated_at_column`. Grant back to `service_role` only (functions still callable inside RLS expressions — that uses the definer privilege, not the caller's EXECUTE grant).
+- **RLS Policy Always True**: replace `Content/Episodes/Genres/EPG/content_genres` `USING (true)` SELECT policies with `auth.uid() IS NOT NULL` if user wants gating, OR keep public + acknowledge intent in security memory. Default: keep public (anime catalog is meant to be browsable) and write to security memory.
 
-- `stream-token` / `stream-proxy`
-  - One-shot tokens: mark `used_at` on first manifest hit; reject reuse for non-segment requests.
-  - Bind to `ip_hash` — `stream-proxy` recomputes hash from `x-forwarded-for` and rejects mismatches.
-  - Reject if `Origin` / `Referer` not in allowlist (preview + published + custom domains).
-  - Strip `Server`, `Via`, upstream URL fragments from rewritten manifests.
-- `manga-proxy`
-  - Require `Authorization` Bearer (verify with `getClaims`) for all `mangadex` / `page` routes. Covers stay public + cached.
-  - Tighten allowlist (already done) + per-user rate limit keyed off `sub`, not IP.
-  - Add `Referer` / `Origin` allowlist check.
-- `iptv-sync` — already admin-only; add audit row to a new `admin_audit` log table (optional).
-- New `iptv-proxy` edge function — proxies live channel `.m3u8` through the same signed-token pattern as `stream-proxy` so raw IPTV URLs never reach the client. `LiveWatch` switches to it.
-- New `live-token` edge function — issues per-channel signed tokens (auth required).
-- Frontend: remove any remaining direct `fetch()` to mangadex/jikan/iptv/raw streams. Grep gate before merge.
+Auth config:
+- Enable Leaked Password Protection (Supabase auth setting — surface link to dashboard; can't toggle via SQL).
 
-Config: keep `verify_jwt = false` and validate JWTs in code (signing-keys flow). Add `verify_jwt = false` entries for the new functions in `supabase/config.toml`.
+## 5. SEO / AI search
 
-## Phase 4 — Verification
+- Add `react-helmet-async` provider in `src/main.tsx`; per-page `<Helmet>` titles + descriptions on `Index`, `Search`, `ContentDetail`, `Watch`, `Live`, `Manga`, `Watchlist`, `Profile`, `Auth`.
+- Create `scripts/generate-sitemap.ts` + `predev`/`prebuild` hooks. Includes static routes + dynamic `/content/:id` + `/manga/:id` from Supabase.
+- Per-page OG/Twitter tags via Helmet.
+- Add JSON-LD `Organization` + `WebSite` in `index.html`; `VideoObject` JSON-LD on `ContentDetail`.
+- Add `aria-label`s on icon-only buttons across `Navbar`, `BottomNav`, players.
+- Note SSR-style pre-rendering is a Lovable platform feature, not a code change — call out in the wrap-up.
 
-- `supabase--linter` clean.
-- Manual: log out → confirm `manga-proxy/mangadex/*` returns 401.
-- Manual: copy a stream-proxy URL into an incognito tab → 403 (IP/origin mismatch).
-- Visual QA each redesigned page in the preview.
+## 6. Poster/thumbnail audit
 
-## Notes / decisions baked in
+`useContent.ts` already resolves `poster_url`/`banner_url`/`thumbnail_url` with fallbacks. Verify `ContentCard`, `HeroBanner`, `ContentCarousel`, `RecommendedSection`, `PopularAnimeSection`, `Search`, `Watchlist` all use the right field per surface (card=poster, hero=banner, rail=thumbnail). Fix any mis-bindings.
 
-- Kept current routes — no URL changes, no broken bookmarks.
-- Kept Tailwind tokens in `index.css`; the new `.senpai-*` classes live alongside as a parallel utility layer scoped under `.senpai-root`.
-- No new tables required for the redesign. The lockdown adds zero tables (one-shot reuse uses the existing `stream_tokens.used_at` column).
-- I will not pull in the uploaded `_shared/data.ts` mock module — real hooks only, per your answer.
+---
 
-## Deliverable order
+## Order of execution
 
-I'll start with Phase 1 (foundation) right after you approve. Each subsequent phase will be a separate turn so you can review.
+1. Migrations (page_views.user_id, RLS tightening, REVOKE EXECUTE)
+2. Edge fn changes (`live-token` premium gate)
+3. `App.tsx` route guards
+4. `useLiveToken` cache + `LiveChannelPlayer` refresh
+5. `Search.tsx` + `Manga.tsx` rewrites
+6. Poster audit
+7. SEO (Helmet + sitemap + JSON-LD + aria)
+8. Run `supabase--linter` and security scan; update security memory
+
+## Risks / decisions needed
+
+- **Catalog public vs auth-only**: `content`, `episodes`, `genres` currently `USING (true)`. Keep public (recommended for SEO of anime detail pages) or lock to authed users? Default = keep public.
+- **IPTV premium gate**: Use `profiles.is_premium` column (exists) — non-premium users get 403 from `live-token`. Confirm OK.
+- **page_views.user_id**: making non-null breaks anonymous tracking. Plan: nullable column, RLS `INSERT` requires `user_id = auth.uid() OR user_id IS NULL` only when caller is anon. Simpler: require auth + bind to uid; drop anonymous page views.
+
+I'll proceed with defaults above unless you flag otherwise.
