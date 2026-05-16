@@ -57,8 +57,8 @@ const App = () => (
             <Route path="/profile" element={<Profile />} />
             <Route path="/genres" element={<Genres />} />
             <Route path="/admin" element={<Admin />} />
-            <Route path="/live" element={<Live />} />
-            <Route path="/live/:channelId" element={<LiveWatch />} />
+            <Route path="/live" element={<RequireAuth><Live /></RequireAuth>} />
+            <Route path="/live/:channelId" element={<RequireAuth><LiveWatch /></RequireAuth>} />
             <Route path="/manga" element={<RequireAuth><Manga /></RequireAuth>} />
             <Route path="/manga/:id" element={<RequireAuth><MangaDetail /></RequireAuth>} />
             <Route path="/manga/:id/:chapterId" element={<RequireAuth><MangaReader /></RequireAuth>} />

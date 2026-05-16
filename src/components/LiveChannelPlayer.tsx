@@ -27,6 +27,8 @@ const LiveChannelPlayer = ({ channel, onClose }: Props) => {
   const { mutateAsync: signLive } = useLiveToken();
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [authBlock, setAuthBlock] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const expiresAtRef = useRef<number>(0);
   const { now, next } = getNowNext(epg);
   const nowProgress = now ? Math.min(100, ((Date.now() - now.start.getTime()) / (now.stop.getTime() - now.start.getTime())) * 100) : 0;
 
@@ -41,11 +43,24 @@ const LiveChannelPlayer = ({ channel, onClose }: Props) => {
     setAuthBlock(false);
     if (!user) { setAuthBlock(true); setLoading(false); return; }
     let cancelled = false;
-    signLive({ channelUrl: channel.stream.url })
-      .then((r) => { if (!cancelled) setSignedUrl(r.url); })
+    const force = refreshKey > 0;
+    signLive({ channelUrl: channel.stream.url, force })
+      .then((r) => {
+        if (cancelled) return;
+        expiresAtRef.current = new Date(r.expiresAt).getTime();
+        setSignedUrl(r.url);
+      })
       .catch(() => { if (!cancelled) { setError("Failed to authorize stream."); setLoading(false); } });
     return () => { cancelled = true; };
-  }, [channel.stream.url, user, signLive]);
+  }, [channel.stream.url, user, signLive, refreshKey]);
+
+  // Pre-emptive refresh ~15s before token expiry
+  useEffect(() => {
+    if (!signedUrl || !expiresAtRef.current) return;
+    const msUntilRefresh = Math.max(5_000, expiresAtRef.current - Date.now() - 15_000);
+    const t = setTimeout(() => setRefreshKey((k) => k + 1), msUntilRefresh);
+    return () => clearTimeout(t);
+  }, [signedUrl]);
 
   useEffect(() => {
     let hls: any = null;
@@ -69,7 +84,23 @@ const LiveChannelPlayer = ({ channel, onClose }: Props) => {
           video.play().catch(() => {});
         });
         hls.on(Hls.Events.ERROR, (_e: any, data: any) => {
+          const isAuthFail =
+            data?.response?.code === 403 ||
+            data?.response?.code === 410 ||
+            data?.details === "manifestLoadError" ||
+            data?.details === "levelLoadError" ||
+            data?.details === "fragLoadError";
+          if (isAuthFail && !data.fatal) {
+            // transient: try a forced refresh
+            setRefreshKey((k) => k + 1);
+            return;
+          }
           if (data.fatal) {
+            if (isAuthFail) {
+              // Recover by forcing a new signed URL
+              setRefreshKey((k) => k + 1);
+              return;
+            }
             markChannelBroken(channel.id);
             setError("Stream unavailable. This channel has been hidden from the list.");
             setLoading(false);
