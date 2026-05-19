@@ -28,6 +28,7 @@ function resolveStreamUrl(url: string): string {
 
 const Watch = () => {
   const { contentId, episodeId } = useParams();
+  const { user } = useAuth();
   const { data: content } = useContentDetail(contentId);
   const { data: episodes } = useEpisodes(contentId);
   const { data: servers } = useVideoServers(episodeId);
