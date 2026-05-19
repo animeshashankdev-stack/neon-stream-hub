@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { ArrowLeft, Loader2, Maximize2, Minimize, Volume2, VolumeX, Star, AlertTriangle, Radio, Tv } from "lucide-react";
+import { ArrowLeft, Loader2, Maximize2, Minimize, Volume2, VolumeX, Star, AlertTriangle, Radio, Tv, Crown } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { useIPTV } from "@/hooks/useIPTV";
 import { useChannelFavorites, markChannelBroken } from "@/hooks/useChannelFavorites";
 import { useEPG, getNowNext } from "@/hooks/useEPG";
-import { useLiveToken } from "@/hooks/useLiveToken";
+import { useLiveToken, LivePremiumError } from "@/hooks/useLiveToken";
 import { useAuth } from "@/contexts/AuthContext";
 
 const fmtTime = (d: Date) => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -28,15 +28,26 @@ const LiveWatch = () => {
   const [fullscreen, setFullscreen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [premiumRequired, setPremiumRequired] = useState(false);
 
   useEffect(() => {
     setSignedUrl(null);
+    setPremiumRequired(false);
     if (!channel) return;
     if (!user) { setError("Sign in required to watch live channels."); setLoading(false); return; }
     let cancelled = false;
     signLive({ channelUrl: channel.stream.url })
       .then((r) => { if (!cancelled) setSignedUrl(r.url); })
-      .catch(() => { if (!cancelled) { setError("Failed to authorize stream."); setLoading(false); } });
+      .catch((e) => {
+        if (cancelled) return;
+        if (e instanceof LivePremiumError) {
+          setPremiumRequired(true);
+          setError(null);
+        } else {
+          setError("Failed to authorize stream.");
+        }
+        setLoading(false);
+      });
     return () => { cancelled = true; };
   }, [channel?.id, channel?.stream.url, user, signLive]);
 
@@ -156,6 +167,19 @@ const LiveWatch = () => {
                     <AlertTriangle className="w-10 h-10 text-amber-400 mx-auto mb-3" />
                     <p className="text-white font-bold mb-1">{error}</p>
                     <Link to="/live" className="text-teal-300 underline text-sm">Pick another channel</Link>
+                  </div>
+                </div>
+              )}
+              {premiumRequired && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+                  <div className="text-center max-w-md px-6">
+                    <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-fuchsia-500 to-amber-400 flex items-center justify-center mb-4 shadow-[0_0_40px_rgba(217,70,239,0.5)]">
+                      <Crown className="w-7 h-7 text-black" />
+                    </div>
+                    <p className="font-mono text-[11px] tracking-[0.2em] text-fuchsia-300 uppercase font-bold mb-2">Senpai+ required</p>
+                    <h2 className="text-2xl font-black text-white mb-2">Live TV is a premium perk</h2>
+                    <p className="text-white/60 text-sm mb-5">Unlock 1,000+ global live channels, EPG, and ad-free playback with Senpai+.</p>
+                    <Link to="/profile" className="inline-block px-5 py-2.5 rounded-full bg-white text-black font-bold text-sm hover:bg-white/90">Upgrade to Senpai+</Link>
                   </div>
                 </div>
               )}
