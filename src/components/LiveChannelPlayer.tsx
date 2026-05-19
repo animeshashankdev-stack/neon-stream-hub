@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { X, Maximize2, Minimize, Volume2, VolumeX, Loader2, AlertTriangle, Star } from "lucide-react";
+import { X, Maximize2, Minimize, Volume2, VolumeX, Loader2, AlertTriangle, Star, Crown } from "lucide-react";
 import type { ResolvedChannel } from "@/hooks/useIPTV";
 import { useChannelFavorites, markChannelBroken } from "@/hooks/useChannelFavorites";
 import { useEPG, getNowNext } from "@/hooks/useEPG";
-import { useLiveToken } from "@/hooks/useLiveToken";
+import { useLiveToken, LivePremiumError } from "@/hooks/useLiveToken";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 
@@ -27,6 +27,7 @@ const LiveChannelPlayer = ({ channel, onClose }: Props) => {
   const { mutateAsync: signLive } = useLiveToken();
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [authBlock, setAuthBlock] = useState(false);
+  const [premiumRequired, setPremiumRequired] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const expiresAtRef = useRef<number>(0);
   const { now, next } = getNowNext(epg);
@@ -41,6 +42,7 @@ const LiveChannelPlayer = ({ channel, onClose }: Props) => {
   useEffect(() => {
     setSignedUrl(null);
     setAuthBlock(false);
+    setPremiumRequired(false);
     if (!user) { setAuthBlock(true); setLoading(false); return; }
     let cancelled = false;
     const force = refreshKey > 0;
@@ -50,7 +52,15 @@ const LiveChannelPlayer = ({ channel, onClose }: Props) => {
         expiresAtRef.current = new Date(r.expiresAt).getTime();
         setSignedUrl(r.url);
       })
-      .catch(() => { if (!cancelled) { setError("Failed to authorize stream."); setLoading(false); } });
+      .catch((e) => {
+        if (cancelled) return;
+        if (e instanceof LivePremiumError) {
+          setPremiumRequired(true);
+        } else {
+          setError("Failed to authorize stream.");
+        }
+        setLoading(false);
+      });
     return () => { cancelled = true; };
   }, [channel.stream.url, user, signLive, refreshKey]);
 
@@ -151,6 +161,20 @@ const LiveChannelPlayer = ({ channel, onClose }: Props) => {
               <p className="text-white font-bold mb-2">Sign in required</p>
               <p className="text-white/60 text-sm mb-4">Live channels require a Senpai account.</p>
               <Link to="/auth" className="inline-block px-5 py-2 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-bold text-sm">Sign in</Link>
+            </div>
+          </div>
+        )}
+
+        {premiumRequired && !authBlock && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/85 backdrop-blur-sm z-30">
+            <div className="text-center max-w-md px-6">
+              <div className="w-14 h-14 mx-auto rounded-full bg-gradient-to-br from-fuchsia-500 to-amber-400 flex items-center justify-center mb-3 shadow-[0_0_30px_rgba(217,70,239,0.5)]">
+                <Crown className="w-6 h-6 text-black" />
+              </div>
+              <p className="font-mono text-[10px] tracking-[0.2em] text-fuchsia-300 uppercase font-bold mb-1">Senpai+ required</p>
+              <h3 className="text-xl font-black text-white mb-2">Live TV is a premium perk</h3>
+              <p className="text-white/60 text-sm mb-4">Upgrade to unlock 1,000+ global live channels.</p>
+              <Link to="/profile" className="inline-block px-5 py-2 rounded-full bg-white text-black font-bold text-sm">Upgrade to Senpai+</Link>
             </div>
           </div>
         )}
