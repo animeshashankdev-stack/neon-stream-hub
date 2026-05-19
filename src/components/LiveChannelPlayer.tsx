@@ -165,6 +165,20 @@ const LiveChannelPlayer = ({ channel, onClose }: Props) => {
           </div>
         )}
 
+        {premiumRequired && !authBlock && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/85 backdrop-blur-sm z-30">
+            <div className="text-center max-w-md px-6">
+              <div className="w-14 h-14 mx-auto rounded-full bg-gradient-to-br from-fuchsia-500 to-amber-400 flex items-center justify-center mb-3 shadow-[0_0_30px_rgba(217,70,239,0.5)]">
+                <Crown className="w-6 h-6 text-black" />
+              </div>
+              <p className="font-mono text-[10px] tracking-[0.2em] text-fuchsia-300 uppercase font-bold mb-1">Senpai+ required</p>
+              <h3 className="text-xl font-black text-white mb-2">Live TV is a premium perk</h3>
+              <p className="text-white/60 text-sm mb-4">Upgrade to unlock 1,000+ global live channels.</p>
+              <Link to="/profile" className="inline-block px-5 py-2 rounded-full bg-white text-black font-bold text-sm">Upgrade to Senpai+</Link>
+            </div>
+          </div>
+        )}
+
         {/* Top bar */}
         <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/80 to-transparent flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
