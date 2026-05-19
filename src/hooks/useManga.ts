@@ -109,26 +109,43 @@ export function useMangaChapters(id: string | undefined) {
     queryKey: ["manga", "chapters", id],
     enabled: !!id,
     queryFn: async () => {
-      const all: MangaChapter[] = [];
-      let offset = 0;
-      for (let page = 0; page < 5; page++) {
-        const j = await mdFetch(
-          `/manga/${id}/feed?limit=100&offset=${offset}&translatedLanguage[]=en&order[chapter]=asc&includes[]=scanlation_group`,
-        );
-        for (const c of j.data || []) {
-          all.push({
-            id: c.id,
-            chapter: c.attributes?.chapter ?? "?",
-            volume: c.attributes?.volume ?? null,
-            title: c.attributes?.title ?? `Chapter ${c.attributes?.chapter ?? "?"}`,
-            language: c.attributes?.translatedLanguage ?? "en",
-            publishedAt: c.attributes?.publishAt ?? "",
-          });
+      async function fetchAll(langFilter: string): Promise<MangaChapter[]> {
+        const out: MangaChapter[] = [];
+        let offset = 0;
+        for (let page = 0; page < 5; page++) {
+          const j = await mdFetch(
+            `/manga/${id}/feed?limit=100&offset=${offset}${langFilter}&order[chapter]=asc&includes[]=scanlation_group`,
+          );
+          for (const c of j.data || []) {
+            out.push({
+              id: c.id,
+              chapter: c.attributes?.chapter ?? "?",
+              volume: c.attributes?.volume ?? null,
+              title: c.attributes?.title ?? `Chapter ${c.attributes?.chapter ?? "?"}`,
+              language: c.attributes?.translatedLanguage ?? "en",
+              publishedAt: c.attributes?.publishAt ?? "",
+            });
+          }
+          if ((j.data?.length ?? 0) < 100) break;
+          offset += 100;
         }
-        if ((j.data?.length ?? 0) < 100) break;
-        offset += 100;
+        return out;
       }
-      return all;
+      // Try English first; fall back to all languages if nothing
+      let chapters = await fetchAll("&translatedLanguage[]=en");
+      if (chapters.length === 0) {
+        chapters = await fetchAll("");
+      }
+      // Dedupe by chapter number, prefer English
+      const seen = new Map<string, MangaChapter>();
+      for (const c of chapters) {
+        const key = `${c.volume ?? "?"}::${c.chapter}`;
+        const existing = seen.get(key);
+        if (!existing || (existing.language !== "en" && c.language === "en")) {
+          seen.set(key, c);
+        }
+      }
+      return Array.from(seen.values());
     },
   });
 }
