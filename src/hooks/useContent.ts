@@ -179,8 +179,12 @@ export function useVideoServers(episodeId: string | undefined) {
         _episode_id: episodeId,
       });
       if (error) throw error;
-      // stream_url is intentionally omitted — fetched via signed stream-token edge fn
-      return (data || []).map((s: any) => ({ ...s, stream_url: "" }));
+      // For embed players, embed_url is included; for direct video, URL is hidden
+      // and the client must request a signed URL via the stream-token edge function.
+      return (data || []).map((s: any) => ({
+        ...s,
+        stream_url: s.embed_url || "",
+      }));
     },
     enabled: !!episodeId,
   });

@@ -627,6 +627,7 @@ export type Database = {
       get_episode_servers: {
         Args: { _episode_id: string }
         Returns: {
+          embed_url: string
           episode_id: string
           id: string
           language: string
