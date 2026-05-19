@@ -10,7 +10,7 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
-import { Users, Eye, Film, TrendingUp, Shield, Sparkles, Loader2 } from "lucide-react";
+import { Users, Eye, Film, TrendingUp, Shield, Sparkles, Loader2, Crown } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 type Tab = "overview" | "users" | "content" | "analytics";
@@ -103,6 +103,30 @@ const Admin = () => {
       return data || [];
     },
     enabled: !!isAdmin,
+  });
+
+  // Admin: mutate premium/role
+  const setPremium = useMutation({
+    mutationFn: async ({ userId, value }: { userId: string; value: boolean }) => {
+      const { error } = await supabase.rpc("admin_set_premium", { _target: userId, _is_premium: value });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Premium updated" });
+      queryClient.invalidateQueries({ queryKey: ["admin_profiles"] });
+    },
+    onError: (e: any) => toast({ title: "Failed", description: e?.message || "Could not update", variant: "destructive" }),
+  });
+  const setAdminRole = useMutation({
+    mutationFn: async ({ userId, grant }: { userId: string; grant: boolean }) => {
+      const { error } = await supabase.rpc("admin_set_role", { _target: userId, _role: "admin" as any, _grant: grant });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Role updated" });
+      queryClient.invalidateQueries({ queryKey: ["admin_user_roles"] });
+    },
+    onError: (e: any) => toast({ title: "Failed", description: e?.message || "Could not update", variant: "destructive" }),
   });
 
   // Content
@@ -257,8 +281,8 @@ const Admin = () => {
                 <tr className="border-b border-border/30 text-left">
                   <th className="p-3 text-xs text-muted-foreground font-medium">User</th>
                   <th className="p-3 text-xs text-muted-foreground font-medium">Level</th>
-                  <th className="p-3 text-xs text-muted-foreground font-medium">XP</th>
-                  <th className="p-3 text-xs text-muted-foreground font-medium">Role</th>
+                  <th className="p-3 text-xs text-muted-foreground font-medium">Premium</th>
+                  <th className="p-3 text-xs text-muted-foreground font-medium">Admin</th>
                   <th className="p-3 text-xs text-muted-foreground font-medium">Joined</th>
                 </tr>
               </thead>
@@ -274,13 +298,34 @@ const Admin = () => {
                       </div>
                     </td>
                     <td className="p-3 text-xs">{p.level}</td>
-                    <td className="p-3 text-xs">{p.xp}</td>
                     <td className="p-3">
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                        roleForUser(p.user_id) === "admin" ? "bg-primary/20 text-primary" : "bg-secondary text-secondary-foreground"
-                      }`}>
-                        {roleForUser(p.user_id)}
-                      </span>
+                      <button
+                        disabled={setPremium.isPending}
+                        onClick={() => setPremium.mutate({ userId: p.user_id, value: !p.is_premium })}
+                        className={`inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-full font-bold transition-colors ${
+                          p.is_premium ? "bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/40" : "bg-secondary text-secondary-foreground border border-transparent hover:border-fuchsia-500/40"
+                        }`}
+                      >
+                        <Crown className="w-3 h-3" /> {p.is_premium ? "Premium" : "Free"}
+                      </button>
+                    </td>
+                    <td className="p-3">
+                      {(() => {
+                        const isAdminRow = roleForUser(p.user_id) === "admin";
+                        const isSelf = p.user_id === user?.id;
+                        return (
+                          <button
+                            disabled={setAdminRole.isPending || isSelf}
+                            title={isSelf ? "You can't change your own role" : undefined}
+                            onClick={() => setAdminRole.mutate({ userId: p.user_id, grant: !isAdminRow })}
+                            className={`text-[10px] px-2 py-1 rounded-full font-bold transition-colors ${
+                              isAdminRow ? "bg-primary/20 text-primary border border-primary/40" : "bg-secondary text-secondary-foreground border border-transparent hover:border-primary/40"
+                            } ${isSelf ? "opacity-50 cursor-not-allowed" : ""}`}
+                          >
+                            {isAdminRow ? "Admin" : "User"}
+                          </button>
+                        );
+                      })()}
                     </td>
                     <td className="p-3 text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</td>
                   </tr>
