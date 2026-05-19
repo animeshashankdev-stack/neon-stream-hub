@@ -359,18 +359,34 @@ const Watch = () => {
             <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background/80 to-black/90" />
             <div className="z-10 text-center flex flex-col items-center max-w-md">
               <div className="w-20 h-20 md:w-24 md:h-24 rounded-full border border-white/10 flex items-center justify-center mb-6 backdrop-blur-xl bg-white/5 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-                <Server className="w-8 h-8 md:w-10 md:h-10 text-white/60" />
+                {!user ? <Lock className="w-8 h-8 md:w-10 md:h-10 text-accent" /> : <Server className="w-8 h-8 md:w-10 md:h-10 text-white/60" />}
               </div>
               <p className="font-mono text-[11px] md:text-xs tracking-[0.2em] text-white/60 uppercase font-bold mb-2">
-                {servers === undefined ? "Loading server…" : iframeError ? "All servers blocked" : "No server available"}
+                {!user
+                  ? "Sign in required"
+                  : servers === undefined
+                    ? "Loading server…"
+                    : iframeError
+                      ? "All servers blocked"
+                      : "No server available"}
               </p>
               <p className="text-white/50 text-xs md:text-sm leading-relaxed mb-5">
-                {iframeError
-                  ? "Every source either timed out or required ads. Pick one below to retry."
-                  : serverList.length === 0
-                    ? "We couldn't find a working source for this episode yet. Pick another episode or check back soon."
-                    : "Pick a different language or server."}
+                {!user
+                  ? "Video playback requires an account. Create one or sign in — it's free and unlocks streaming, manga, watchlist sync and more."
+                  : iframeError
+                    ? "Every source either timed out or required ads. Pick one below to retry."
+                    : serverList.length === 0
+                      ? "We couldn't find a working source for this episode yet. Pick another episode or check back soon."
+                      : "Pick a different language or server."}
               </p>
+              {!user && (
+                <Link
+                  to={`/auth?next=${encodeURIComponent(`/watch/${contentId}/${episodeId || ""}`)}`}
+                  className="px-5 py-2.5 rounded-full bg-accent text-black font-bold text-sm hover:bg-accent/80 transition-colors mb-3"
+                >
+                  Sign in to watch
+                </Link>
+              )}
               {langServers.length > 1 && (
                 <div className="flex flex-wrap gap-2 justify-center max-w-sm">
                   {langServers.map((srv, idx) => (
