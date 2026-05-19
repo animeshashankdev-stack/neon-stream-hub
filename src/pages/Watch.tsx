@@ -3,10 +3,11 @@ import { useParams, Link } from "react-router-dom";
 import {
   Play, Pause, SkipBack, SkipForward, Volume2, VolumeX,
   Maximize2, Minimize, ArrowLeft, ChevronDown, Server,
-  Settings, Subtitles, MessageSquare,
+  Settings, Subtitles, MessageSquare, Lock,
 } from "lucide-react";
 import { useContentDetail, useEpisodes, useVideoServers } from "@/hooks/useContent";
 import { useStreamToken } from "@/hooks/useStreamToken";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
