@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { X, Maximize2, Minimize, Volume2, VolumeX, Loader2, AlertTriangle, Star } from "lucide-react";
+import { X, Maximize2, Minimize, Volume2, VolumeX, Loader2, AlertTriangle, Star, Crown } from "lucide-react";
 import type { ResolvedChannel } from "@/hooks/useIPTV";
 import { useChannelFavorites, markChannelBroken } from "@/hooks/useChannelFavorites";
 import { useEPG, getNowNext } from "@/hooks/useEPG";
-import { useLiveToken } from "@/hooks/useLiveToken";
+import { useLiveToken, LivePremiumError } from "@/hooks/useLiveToken";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 
@@ -27,6 +27,7 @@ const LiveChannelPlayer = ({ channel, onClose }: Props) => {
   const { mutateAsync: signLive } = useLiveToken();
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [authBlock, setAuthBlock] = useState(false);
+  const [premiumRequired, setPremiumRequired] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const expiresAtRef = useRef<number>(0);
   const { now, next } = getNowNext(epg);
@@ -41,6 +42,7 @@ const LiveChannelPlayer = ({ channel, onClose }: Props) => {
   useEffect(() => {
     setSignedUrl(null);
     setAuthBlock(false);
+    setPremiumRequired(false);
     if (!user) { setAuthBlock(true); setLoading(false); return; }
     let cancelled = false;
     const force = refreshKey > 0;
@@ -50,7 +52,15 @@ const LiveChannelPlayer = ({ channel, onClose }: Props) => {
         expiresAtRef.current = new Date(r.expiresAt).getTime();
         setSignedUrl(r.url);
       })
-      .catch(() => { if (!cancelled) { setError("Failed to authorize stream."); setLoading(false); } });
+      .catch((e) => {
+        if (cancelled) return;
+        if (e instanceof LivePremiumError) {
+          setPremiumRequired(true);
+        } else {
+          setError("Failed to authorize stream.");
+        }
+        setLoading(false);
+      });
     return () => { cancelled = true; };
   }, [channel.stream.url, user, signLive, refreshKey]);
 
