@@ -175,12 +175,12 @@ export function useVideoServers(episodeId: string | undefined) {
     queryKey: ["video-servers", episodeId],
     queryFn: async () => {
       if (!episodeId) return [];
-      const { data, error } = await supabase
-        .from("video_servers")
-        .select("*")
-        .eq("episode_id", episodeId);
+      const { data, error } = await supabase.rpc("get_episode_servers", {
+        _episode_id: episodeId,
+      });
       if (error) throw error;
-      return data || [];
+      // stream_url is intentionally omitted — fetched via signed stream-token edge fn
+      return (data || []).map((s: any) => ({ ...s, stream_url: "" }));
     },
     enabled: !!episodeId,
   });

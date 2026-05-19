@@ -601,6 +601,39 @@ export type Database = {
       }
     }
     Functions: {
+      admin_list_users: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          created_at: string
+          display_name: string
+          is_admin: boolean
+          is_premium: boolean
+          user_id: string
+        }[]
+      }
+      admin_set_premium: {
+        Args: { _is_premium: boolean; _target: string }
+        Returns: undefined
+      }
+      admin_set_role: {
+        Args: {
+          _grant: boolean
+          _role: Database["public"]["Enums"]["app_role"]
+          _target: string
+        }
+        Returns: undefined
+      }
+      get_episode_servers: {
+        Args: { _episode_id: string }
+        Returns: {
+          episode_id: string
+          id: string
+          language: string
+          quality: string
+          server_name: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
