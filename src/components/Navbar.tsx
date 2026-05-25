@@ -11,8 +11,10 @@ const navLinks = [
   { label: "Cartoon", to: "/search?genre=Cartoon" },
   { label: "Series", to: "/search?type=series" },
   { label: "Movies", to: "/search?type=movie" },
+  { label: "Manga", to: "/manga" },
   { label: "Live TV", to: "/live" },
 ];
+
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
