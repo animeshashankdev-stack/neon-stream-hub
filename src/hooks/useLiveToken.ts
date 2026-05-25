@@ -47,20 +47,36 @@ function getCached(channelUrl: string): SignedLive | null {
   return hit;
 }
 
+interface FunctionsErrorContext {
+  status?: number;
+}
+
 export function useLiveToken() {
   return useMutation({
-    mutationFn: async ({ channelUrl, force = false }: { channelUrl: string; force?: boolean }) => {
+    mutationFn: async ({
+      channelUrl,
+      force = false,
+    }: {
+      channelUrl: string;
+      force?: boolean;
+    }) => {
       if (!force) {
         const cached = getCached(channelUrl);
         if (cached) return cached;
       }
-      const { data, error } = await supabase.functions.invoke<SignedLive>("live-token", {
-        body: { channelUrl },
-      });
+      const { data, error } = await supabase.functions.invoke<SignedLive>(
+        "live-token",
+        {
+          body: { channelUrl },
+        }
+      );
       if (error) {
         // supabase-js wraps non-2xx as FunctionsHttpError; sniff for 403
-        const ctx = (error as any).context;
-        const status = ctx?.status ?? (error as any).status;
+        const ctx = (error as FunctionsErrorContext & { context?: FunctionsErrorContext })
+          .context;
+        const status =
+          ctx?.status ??
+          (error as FunctionsErrorContext & { status?: number }).status;
         if (status === 403) throw new LivePremiumError();
         throw error;
       }

@@ -47,28 +47,59 @@ function resolveImages(item: ContentItem): ContentItem {
   };
 }
 
-async function fetchContentWithGenres(query: any): Promise<ContentItem[]> {
+interface GenreLink {
+  content_id: string;
+  genre_id: string;
+}
+
+interface GenreRow {
+  id: string;
+  name: string;
+}
+
+interface DatabaseContent {
+  id: string;
+  title: string;
+  description: string | null;
+  type: "movie" | "series";
+  release_year: number | null;
+  rating: number | null;
+  poster_url: string | null;
+  banner_url: string | null;
+  thumbnail_url: string | null;
+  duration_minutes: number | null;
+  language: string | null;
+  status: "ongoing" | "completed" | "upcoming" | null;
+  featured: boolean | null;
+}
+
+async function fetchContentWithGenres(
+  query: ReturnType<typeof supabase.from>
+): Promise<ContentItem[]> {
   const { data: content, error } = await query;
   if (error) throw error;
   if (!content || content.length === 0) return [];
 
-  const ids = content.map((c: any) => c.id);
+  const ids = (content as DatabaseContent[]).map((c) => c.id);
   const { data: cg } = await supabase
     .from("content_genres")
-    .select("content_id, genre_id")
-    .in("content_id", ids);
+    .select("content_id, genre_id");
   const { data: genres } = await supabase.from("genres").select("id, name");
 
-  const genreMap = new Map(genres?.map((g: any) => [g.id, g.name]) || []);
+  const genreMap = new Map(
+    (genres as GenreRow[] | null)?.map((g) => [g.id, g.name]) || []
+  );
   const contentGenres = new Map<string, string[]>();
-  cg?.forEach((link: any) => {
+  (cg as GenreLink[] | null)?.forEach((link) => {
     const arr = contentGenres.get(link.content_id) || [];
     const name = genreMap.get(link.genre_id);
     if (name) arr.push(name);
     contentGenres.set(link.content_id, arr);
   });
 
-  return content.map((c: any) => resolveImages({ ...c, genres: contentGenres.get(c.id) || [] }));
+  return (content as DatabaseContent[]).map((c) =>
+    resolveImages({ ...c, genres: contentGenres.get(c.id) || [] })
+  );
 }
 
 export function useContentList(filters?: {
@@ -170,6 +201,16 @@ export function useRecommendations(contentId: string | undefined) {
   });
 }
 
+interface ServerData {
+  id: string;
+  episode_id: string;
+  server_name: string;
+  quality: string;
+  language: string | null;
+  embed_url: string | null;
+  stream_url?: string;
+}
+
 export function useVideoServers(episodeId: string | undefined) {
   return useQuery({
     queryKey: ["video-servers", episodeId],
@@ -181,7 +222,7 @@ export function useVideoServers(episodeId: string | undefined) {
       if (error) throw error;
       // For embed players, embed_url is included; for direct video, URL is hidden
       // and the client must request a signed URL via the stream-token edge function.
-      return (data || []).map((s: any) => ({
+      return ((data || []) as ServerData[]).map((s) => ({
         ...s,
         stream_url: s.embed_url || "",
       }));

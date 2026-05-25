@@ -19,8 +19,8 @@ const Genres = () => {
         map.get(g)!.push(item);
       }
     }
-    return genres
-      .map((g: any) => ({ name: g.name, slug: g.slug, items: map.get(g.name) || [] }))
+    return (genres as Array<{ name: string; slug: string }>)
+      .map((g) => ({ name: g.name, slug: g.slug, items: map.get(g.name) || [] }))
       .filter((g) => g.items.length > 0);
   }, [allContent, genres]);
 

@@ -7,6 +7,19 @@ export interface EPGProgram {
 }
 
 // Try epg.pw lightweight JSON endpoint. Falls back to empty silently.
+interface EPGRawProgram {
+  title?: string;
+  name?: string;
+  start?: number | string;
+  start_time?: number | string;
+  startTime?: number | string;
+  stop?: number | string;
+  end_time?: number | string;
+  stopTime?: number | string;
+  endTime?: number | string;
+  [key: string]: any;
+}
+
 async function fetchEPG(channelId: string): Promise<EPGProgram[]> {
   try {
     const res = await fetch(
@@ -15,14 +28,24 @@ async function fetchEPG(channelId: string): Promise<EPGProgram[]> {
     );
     if (!res.ok) return [];
     const data = await res.json();
-    const programs = Array.isArray(data?.programs) ? data.programs : Array.isArray(data) ? data : [];
+    const programs: EPGRawProgram[] = Array.isArray(data?.programs)
+      ? data.programs
+      : Array.isArray(data)
+        ? data
+        : [];
     return programs
-      .map((p: any) => ({
+      .map((p) => ({
         title: p.title || p.name || "Program",
-        start: new Date(p.start || p.start_time || p.startTime),
-        stop: new Date(p.stop || p.end_time || p.stopTime || p.endTime),
+        start: new Date(
+          (p.start ||
+            p.start_time ||
+            p.startTime) as number | string
+        ),
+        stop: new Date(
+          (p.stop || p.end_time || p.stopTime || p.endTime) as number | string
+        ),
       }))
-      .filter((p: EPGProgram) => !isNaN(p.start.getTime()) && !isNaN(p.stop.getTime()));
+      .filter((p): p is EPGProgram => !isNaN(p.start.getTime()) && !isNaN(p.stop.getTime()));
   } catch {
     return [];
   }

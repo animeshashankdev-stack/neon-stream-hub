@@ -73,10 +73,11 @@ const LiveChannelPlayer = ({ channel, onClose }: Props) => {
   }, [signedUrl]);
 
   useEffect(() => {
-    let hls: any = null;
+    let hls: InstanceType<typeof Hls> | null = null;
     const video = videoRef.current;
     if (!video || !signedUrl) return;
-    setLoading(true); setError(null);
+    setLoading(true);
+    setError(null);
 
     const url = signedUrl;
     let cancelled = false;
@@ -93,21 +94,31 @@ const LiveChannelPlayer = ({ channel, onClose }: Props) => {
           setLoading(false);
           video.play().catch(() => {});
         });
-        hls.on(Hls.Events.ERROR, (_e: any, data: any) => {
-          const isAuthFail =
-            data?.response?.code === 403 ||
-            data?.response?.code === 410 ||
-            data?.details === "manifestLoadError" ||
-            data?.details === "levelLoadError" ||
-            data?.details === "fragLoadError";
-          if (isAuthFail && !data.fatal) {
-            // transient: try a forced refresh
-            setRefreshKey((k) => k + 1);
-            return;
-          }
-          if (data.fatal) {
-            if (isAuthFail) {
-              // Recover by forcing a new signed URL
+        hls.on(
+          Hls.Events.ERROR,
+          (
+            _e: unknown,
+            data: {
+              response?: { code: number };
+              details?: string;
+              fatal?: boolean;
+              [key: string]: any;
+            }
+          ) => {
+            const isAuthFail =
+              data?.response?.code === 403 ||
+              data?.response?.code === 410 ||
+              data?.details === "manifestLoadError" ||
+              data?.details === "levelLoadError" ||
+              data?.details === "fragLoadError";
+            if (isAuthFail && !data.fatal) {
+              // transient: try a forced refresh
+              setRefreshKey((k) => k + 1);
+              return;
+            }
+            if (data.fatal) {
+              if (isAuthFail) {
+                // Recover by forcing a new signed URL
               setRefreshKey((k) => k + 1);
               return;
             }

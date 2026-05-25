@@ -18,6 +18,13 @@ const posterMap: Record<string, string> = {
   "Neon Drifters": "/src/assets/poster-neon-drifters.jpg",
 };
 
+interface WatchlistItem {
+  id: string;
+  content_id: string;
+  created_at: string;
+  content: ContentItem;
+}
+
 export function useWatchlist() {
   const { user } = useAuth();
   return useQuery({
@@ -30,7 +37,7 @@ export function useWatchlist() {
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data || []).map((w: any) => ({
+      return ((data || []) as WatchlistItem[]).map((w) => ({
         watchlistId: w.id,
         ...w.content,
         poster_url: posterMap[w.content?.title] || w.content?.poster_url,

@@ -13,7 +13,12 @@ async function authedHeaders(): Promise<Record<string, string>> {
   return { apikey: ANON, Authorization: `Bearer ${token}` };
 }
 
-async function mdFetch(path: string): Promise<any> {
+interface MangaDexResponse {
+  data: any[];
+  [key: string]: any;
+}
+
+async function mdFetch(path: string): Promise<MangaDexResponse> {
   const headers = await authedHeaders();
   const r = await fetch(`${PROXY}/mangadex${path}`, {
     headers,
@@ -32,8 +37,20 @@ export interface MangaCard {
   tags: string[];
 }
 
-function pickCoverFile(manga: any): string | null {
-  const rel = manga?.relationships?.find((r: any) => r.type === "cover_art");
+interface MangaDexManga {
+  id: string;
+  attributes?: {
+    title?: Record<string, string>;
+    description?: Record<string, string>;
+    status?: string;
+    year?: number | null;
+    tags?: Array<{ attributes?: { name?: { en?: string } } }>;
+  };
+  relationships?: Array<{ type: string; attributes?: { fileName?: string } }>;
+}
+
+function pickCoverFile(manga: MangaDexManga): string | null {
+  const rel = manga?.relationships?.find((r) => r.type === "cover_art");
   return rel?.attributes?.fileName ?? null;
 }
 
@@ -42,10 +59,18 @@ function coverUrl(mangaId: string, fileName: string | null): string | null {
   return `${PROXY}/cover/${mangaId}/${fileName}.512.jpg`;
 }
 
-function normalize(manga: any): MangaCard {
+function normalize(manga: MangaDexManga): MangaCard {
   const t = manga.attributes?.title || {};
-  const title = t.en || t["ja-ro"] || t.ja || Object.values(t)[0] as string || "Untitled";
-  const desc = manga.attributes?.description?.en || Object.values(manga.attributes?.description || {})[0] as string || "";
+  const title =
+    t.en ||
+    t["ja-ro"] ||
+    t.ja ||
+    (Object.values(t)[0] as string) ||
+    "Untitled";
+  const desc =
+    manga.attributes?.description?.en ||
+    (Object.values(manga.attributes?.description || {})[0] as string) ||
+    "";
   const file = pickCoverFile(manga);
   return {
     id: manga.id,
@@ -54,7 +79,9 @@ function normalize(manga: any): MangaCard {
     status: manga.attributes?.status || "unknown",
     year: manga.attributes?.year ?? null,
     description: desc,
-    tags: (manga.attributes?.tags || []).map((t: any) => t.attributes?.name?.en).filter(Boolean),
+    tags: (manga.attributes?.tags || [])
+      .map((t) => t.attributes?.name?.en)
+      .filter(Boolean) as string[],
   };
 }
 
@@ -64,9 +91,9 @@ export function usePopularManga() {
     staleTime: 1000 * 60 * 30,
     queryFn: async () => {
       const j = await mdFetch(
-        "/manga?limit=24&order[followedCount]=desc&includes[]=cover_art&availableTranslatedLanguage[]=en&contentRating[]=safe&contentRating[]=suggestive",
+        "/manga?limit=24&order[followedCount]=desc&includes[]=cover_art&availableTranslatedLanguage[]=en&contentRating[]=safe&contentRating[]=suggestive"
       );
-      return (j.data || []).map(normalize) as MangaCard[];
+      return ((j.data || []) as MangaDexManga[]).map(normalize);
     },
   });
 }
@@ -77,7 +104,7 @@ export function useSearchManga(q: string) {
     enabled: q.trim().length > 1,
     queryFn: async () => {
       const j = await mdFetch(
-        `/manga?limit=24&title=${encodeURIComponent(q)}&includes[]=cover_art&contentRating[]=safe&contentRating[]=suggestive`,
+        `/manga?limit=24&title=${encodeURIComponent(q)}&includes[]=cover_art&contentRating[]=safe&contentRating[]=suggestive`
       );
       return (j.data || []).map(normalize) as MangaCard[];
     },

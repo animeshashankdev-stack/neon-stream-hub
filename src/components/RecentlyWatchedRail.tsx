@@ -43,7 +43,7 @@ const RecentlyWatchedRail = () => {
         .order("last_watched_at", { ascending: false })
         .limit(10);
       if (!cancelled) {
-        setRows((data as any) || []);
+        setRows((data as WatchHistoryRow[]) || []);
         setLoading(false);
       }
     })();

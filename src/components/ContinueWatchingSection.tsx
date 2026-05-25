@@ -3,14 +3,31 @@ import { Play } from "lucide-react";
 import { useWatchHistory } from "@/hooks/useWatchHistory";
 import { useAuth } from "@/contexts/AuthContext";
 
+interface WatchHistoryItem {
+  id: string;
+  completed: boolean;
+  progress_seconds: number;
+  total_seconds: number;
+  episodes: {
+    id: string;
+    season_number: number;
+    episode_number: number;
+    content: {
+      id: string;
+      title: string;
+      thumbnail_url?: string;
+    };
+  };
+}
+
 const ContinueWatchingSection = () => {
   const { user } = useAuth();
   const { data: history } = useWatchHistory();
 
   if (!user) return null;
 
-  const continuing = (history || []).filter(
-    (h: any) => !h.completed && h.progress_seconds > 0
+  const continuing = ((history as WatchHistoryItem[]) || []).filter(
+    (h) => !h.completed && h.progress_seconds > 0
   );
 
   if (continuing.length === 0) return null;
@@ -22,7 +39,7 @@ const ContinueWatchingSection = () => {
         <h2 className="text-2xl font-display font-black tracking-tight text-white">Continue Watching</h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {continuing.slice(0, 6).map((item: any) => {
+        {continuing.slice(0, 6).map((item) => {
           const episode = item.episodes;
           const content = episode?.content;
           if (!content || !episode) return null;

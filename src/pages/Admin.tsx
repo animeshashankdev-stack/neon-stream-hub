@@ -13,6 +13,30 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, L
 import { Users, Eye, Film, TrendingUp, Shield, Sparkles, Loader2, Crown } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
+interface AdminUser {
+  id: string;
+  email: string;
+  created_at: string;
+  [key: string]: any;
+}
+
+interface AdminContent {
+  id: string;
+  title: string;
+  created_at: string;
+  [key: string]: any;
+}
+
+interface KPIData {
+  date: string;
+  users: number;
+}
+
+interface ChartDataPoint {
+  name: string;
+  value: number;
+}
+
 type Tab = "overview" | "users" | "content" | "analytics";
 
 const Admin = () => {
@@ -75,12 +99,23 @@ const Admin = () => {
     }
   };
 
+interface PageView {
+  id: string;
+  created_at: string;
+  page_path: string;
+  [key: string]: any;
+}
+
   // Page views
   const { data: pageViews } = useQuery({
     queryKey: ["admin_page_views"],
     queryFn: async () => {
-      const { data } = await supabase.from("page_views").select("*").order("created_at", { ascending: false }).limit(1000);
-      return data || [];
+      const { data } = await supabase
+        .from("page_views")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(1000);
+      return (data as PageView[]) || [];
     },
     enabled: !!isAdmin,
   });
@@ -141,36 +176,48 @@ const Admin = () => {
 
   // Analytics computations
   const stats = useMemo(() => {
-    if (!pageViews) return { today: 0, week: 0, month: 0, total: 0, daily: [] as any[] };
+    if (!pageViews) return { today: 0, week: 0, month: 0, total: 0, daily: [] as KPIData[] };
     const now = new Date();
     const todayStr = now.toISOString().slice(0, 10);
     const weekAgo = new Date(now.getTime() - 7 * 86400000);
     const monthAgo = new Date(now.getTime() - 30 * 86400000);
 
-    const today = pageViews.filter((v: any) => v.created_at?.startsWith(todayStr)).length;
-    const week = pageViews.filter((v: any) => new Date(v.created_at) >= weekAgo).length;
-    const month = pageViews.filter((v: any) => new Date(v.created_at) >= monthAgo).length;
+    const today = (pageViews as PageView[]).filter((v) =>
+      v.created_at?.startsWith(todayStr)
+    ).length;
+    const week = (pageViews as PageView[]).filter(
+      (v) => new Date(v.created_at) >= weekAgo
+    ).length;
+    const month = (pageViews as PageView[]).filter(
+      (v) => new Date(v.created_at) >= monthAgo
+    ).length;
 
     // Daily breakdown for last 14 days
     const dailyMap = new Map<string, number>();
     for (let i = 13; i >= 0; i--) {
-      const d = new Date(now.getTime() - i * 86400000).toISOString().slice(0, 10);
+      const d = new Date(now.getTime() - i * 86400000)
+        .toISOString()
+        .slice(0, 10);
       dailyMap.set(d, 0);
     }
-    pageViews.forEach((v: any) => {
+    (pageViews as PageView[]).forEach((v) => {
       const d = v.created_at?.slice(0, 10);
       if (dailyMap.has(d)) dailyMap.set(d, (dailyMap.get(d) || 0) + 1);
     });
-    const daily = Array.from(dailyMap.entries()).map(([date, views]) => ({ date: date.slice(5), views }));
+    const daily: KPIData[] = Array.from(dailyMap.entries()).map(
+      ([date, views]) => ({ date: date.slice(5), users: views })
+    );
 
-    return { today, week, month, total: pageViews.length, daily };
+    return { today, week, month, total: (pageViews as PageView[]).length, daily };
   }, [pageViews]);
 
   // Top pages
   const topPages = useMemo(() => {
     if (!pageViews) return [];
     const map = new Map<string, number>();
-    pageViews.forEach((v: any) => map.set(v.page_path, (map.get(v.page_path) || 0) + 1));
+    (pageViews as PageView[]).forEach((v) =>
+      map.set(v.page_path, (map.get(v.page_path) || 0) + 1)
+    );
     return Array.from(map.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 10)
