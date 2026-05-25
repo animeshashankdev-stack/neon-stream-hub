@@ -12,7 +12,7 @@ const Live = () => {
   const broken = useBrokenChannels();
   const { has, toggle } = useChannelFavorites();
   const [query, setQuery] = useState("");
-  const [country, setCountry] = useState<string>("ALL");
+  const [country, setCountry] = useState<string>("IN"); // Default to India
   const [category, setCategory] = useState<string>("ALL");
   const [countrySearch, setCountrySearch] = useState("");
 
@@ -48,13 +48,13 @@ const Live = () => {
         {/* Hero */}
         <div className="mb-8 sm:mb-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/30 text-red-300 text-[11px] font-bold uppercase tracking-widest mb-4">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" /> Live · Worldwide
+            <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" /> Live · India
           </div>
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-3">
             Live <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-300 via-cyan-300 to-fuchsia-400">TV channels</span>
           </h1>
           <p className="text-white/60 text-sm sm:text-base max-w-2xl">
-            Free live channels from around the world. Star your favorites — they'll show up at the top.
+            Free live Indian channels. Star your favorites — they'll show up at the top. Switch to worldwide view anytime.
           </p>
         </div>
 
@@ -77,7 +77,7 @@ const Live = () => {
                 <PopoverTrigger asChild>
                   <button className="flex items-center justify-between gap-2 px-4 py-2.5 rounded-full bg-white/5 border border-white/10 text-sm text-white hover:border-teal-400/40 transition-colors min-w-[200px]">
                     <span className="truncate">
-                      {country === "ALL" ? `🌐 All countries (${allChannels.length})` : `${selectedCountry?.flag || ""} ${selectedCountry?.name || country}`}
+                      {country === "ALL" ? `🌐 All countries (${allChannels.length})` : `${selectedCountry?.flag || ""} ${selectedCountry?.name || country} (${filtered.length})`}
                     </span>
                     <ChevronDown className="w-4 h-4 opacity-60 shrink-0" />
                   </button>

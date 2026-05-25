@@ -145,7 +145,16 @@ export function useMangaChapters(id: string | undefined) {
           seen.set(key, c);
         }
       }
-      return Array.from(seen.values());
+      
+      // Sort chapters: numeric ascending order (1, 2, 3, ...)
+      // Parse chapter numbers for proper numeric sorting
+      const sorted = Array.from(seen.values()).sort((a, b) => {
+        const aNum = parseFloat(a.chapter) || 0;
+        const bNum = parseFloat(b.chapter) || 0;
+        return aNum - bNum;
+      });
+      
+      return sorted;
     },
   });
 }
