@@ -81,6 +81,8 @@ const MangaDetail = () => {
             <h2 className="text-2xl font-display font-black mb-6 flex items-center gap-2">
               <span>Chapters</span>
               <span className="text-base font-mono text-white/50">({chapters?.length ?? 0})</span>
+              {/* If chapters fail to load due to auth/proxy, chapters may be empty. */}
+
               {progress && <span className="text-xs px-2.5 py-1 rounded-full bg-fuchsia-500/20 border border-fuchsia-400/30 text-fuchsia-300 font-bold">Reading</span>}
             </h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[65vh] overflow-y-auto pr-2">

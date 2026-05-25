@@ -13,13 +13,14 @@ import { Badge } from "@/components/ui/badge";
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
-function isEmbedUrl(url: string): boolean {
+function isDirectStreamUrl(url: string): boolean {
   if (!url) return false;
-  if (/\.(mp4|webm|ogv|m3u8)(\?|$)/i.test(url)) return false;
-  return true; // treat all non-direct URLs as embeddable
+  // Direct playable streams we can load into <video> or via HLS.
+  return /\.(mp4|webm|ogv|m3u8)(\?|$)/i.test(url);
 }
 
 function resolveStreamUrl(url: string): string {
+
   if (!url) return url;
   const shortMatch = url.match(/short\.icu\/([A-Za-z0-9_-]+)/);
   if (shortMatch) return `https://abysscdn.com/?v=${shortMatch[1]}`;
@@ -92,7 +93,9 @@ const Watch = () => {
   const activeServer = langServers[selectedServerIdx] || langServers[0];
   const rawUrl = activeServer?.stream_url || "";
   const streamUrl = resolveStreamUrl(rawUrl);
-  const useIframe = isEmbedUrl(streamUrl);
+  // Use <video> for direct playable streams. Everything else is treated as embed/iframe.
+  const useIframe = streamUrl ? !isDirectStreamUrl(streamUrl) : false;
+
 
   // Hardened streaming: for direct video streams, route through signed proxy
   const { mutateAsync: issueToken } = useStreamToken();
@@ -119,10 +122,11 @@ const Watch = () => {
     setAutoTried(new Set());
   }, [selectedLang, episodeId]);
 
-  // Smart fallback: if iframe doesn't load in 8s, advance to next server (sandboxed).
+  // Smart fallback: if iframe/embed doesn't load in 8s, advance to next server (sandboxed).
   // If all servers tried sandboxed, fall back to unsafe mode on the first server.
   useEffect(() => {
     if (!useIframe || !streamUrl || iframeError) return;
+
     if (loadTimerRef.current) clearTimeout(loadTimerRef.current);
     loadTimerRef.current = window.setTimeout(() => {
       // load took too long → treat as failure
@@ -346,7 +350,8 @@ const Watch = () => {
         )}
 
         {/* Empty placeholder fallback */}
-        {(!streamUrl || iframeError) && (
+        {(!streamUrl || iframeError || langServers.length === 0) && (
+
           <div className="absolute inset-0 flex items-center justify-center z-0 px-6">
             {backdropImage && (
               <img
@@ -362,13 +367,16 @@ const Watch = () => {
                 {!user ? <Lock className="w-8 h-8 md:w-10 md:h-10 text-accent" /> : <Server className="w-8 h-8 md:w-10 md:h-10 text-white/60" />}
               </div>
               <p className="font-mono text-[11px] md:text-xs tracking-[0.2em] text-white/60 uppercase font-bold mb-2">
-                {!user
+        {!user
                   ? "Sign in required"
                   : servers === undefined
                     ? "Loading server…"
                     : iframeError
                       ? "All servers blocked"
-                      : "No server available"}
+                      : langServers.length === 0
+                        ? "No server available"
+                        : "We couldn't load this source. Try another server."}
+
               </p>
               <p className="text-white/50 text-xs md:text-sm leading-relaxed mb-5">
                 {!user
