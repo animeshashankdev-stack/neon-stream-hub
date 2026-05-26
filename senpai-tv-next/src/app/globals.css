@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+/* Senpai design system (ported from src/styles/senpai.css) */
+@import url("https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Bowlby+One&family=Noto+Sans+JP:wght@400;500;700;900&family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Caveat:wght@400;700&family=Archivo+Black&display=swap");
+
+.senpai-root {
+  --senpai-bg: #07060a;
+  --senpai-bg-2: #0d0a14;
+  --senpai-bg-3: #15101e;
+  --senpai-paper: #f4ede2;
+  --senpai-surface: rgba(20, 15, 32, 0.55);
+  --senpai-text: #f6f1ff;
+  --senpai-text-dim: #b9b1d4;
+
+  --senpai-violet: #a16bff;
+  --senpai-violet-2: #7a3df5;
+  --senpai-teal: #2af0d9;
+  --senpai-fuchsia: #ff48d6;
+  --senpai-amber: #ffc857;
+  --senpai-orange: #ff7a2e;
+  --senpai-red: #ff3b5b;
+  --senpai-ink: #0a0710;
+
+  --senpai-grad-aurora:
+    radial-gradient(1200px 700px at 8% -10%, rgba(161,107,255,0.55), transparent 60%),
+    radial-gradient(1100px 600px at 100% 0%, rgba(42,240,217,0.22), transparent 60%),
+    radial-gradient(900px 900px at 50% 110%, rgba(255,72,214,0.25), transparent 60%),
+    radial-gradient(600px 600px at 50% 50%, rgba(122,61,245,0.10), transparent 70%);
+
+  --senpai-shadow-glow: 0 0 0 1px rgba(161,107,255,0.4), 0 22px 60px -22px rgba(122,61,245,0.55), 0 8px 28px -8px rgba(0,0,0,0.6);
+
+  --senpai-display: "Anton", "Bebas Neue", "Archivo Black", system-ui, sans-serif;
+  --senpai-body: "Inter", "Space Grotesk", system-ui, sans-serif;
+  --senpai-jp: "Noto Sans JP", sans-serif;
+  --senpai-mono: "JetBrains Mono", monospace;
+  --senpai-hand: "Caveat", cursive;
+
+  font-family: var(--senpai-body);
+  background: var(--senpai-bg);
+  color: var(--senpai-text);
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.005em;
+  min-height: 100vh;
+}
+
+.senpai-display { font-family: var(--senpai-display); letter-spacing: -0.01em; }
+.senpai-jp { font-family: var(--senpai-jp); }
+.senpai-mono { font-family: var(--senpai-mono); }
+.senpai-hand { font-family: var(--senpai-hand); }
+
+.senpai-glass {
+  background: rgba(20, 15, 32, 0.55);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+}
+
+.senpai-glow { box-shadow: var(--senpai-shadow-glow); }
+
+/* Halftone dots overlay */
+.senpai-halftone {
+  background-image: radial-gradient(rgba(255,255,255,0.18) 1px, transparent 1.4px);
+  background-size: 6px 6px;
+}
+
+/* Marquee */
+@keyframes senpai-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.senpai-marquee-track { animation: senpai-marquee 40s linear infinite; }
+
+/* Animations */
+@keyframes senpai-pulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
+
+/* Poster card with hover tilt */
+.senpai-poster {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  isolation: isolate;
+  transform: perspective(800px) rotateY(0) rotateX(0);
+  transition: transform 0.4s cubic-bezier(.2,.8,.2,1), box-shadow 0.4s;
+}
+.senpai-poster:hover {
+  transform: perspective(800px) rotateY(-4deg) rotateX(2deg) translateY(-6px) scale(1.02);
+  box-shadow: 0 30px 60px -20px rgba(122,61,245,0.6), 0 0 0 1px rgba(161,107,255,0.4);
+}
+
+.senpai-poster::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, rgba(255,255,255,0.16), transparent 38%);
+  opacity: 0;
+  transition: opacity 0.4s;
+  pointer-events: none;
+}
+.senpai-poster:hover::after { opacity: 1; }
+
+/* Duotone hover for posters */
+.senpai-duotone img { transition: filter 0.4s, transform 0.4s; }
+.senpai-duotone:hover img { filter: contrast(1.05) saturate(1.15) hue-rotate(-2deg); }
+
