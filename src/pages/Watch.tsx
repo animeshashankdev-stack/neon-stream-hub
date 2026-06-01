@@ -33,10 +33,34 @@ function resolveStreamUrl(url: string): string {
 
 const Watch = () => {
   const { contentId, episodeId } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const { data: content } = useContentDetail(contentId);
   const { data: episodes } = useEpisodes(contentId);
   const { data: servers } = useVideoServers(episodeId);
+  const { data: chapters = [] } = useEpisodeChapters(episodeId);
+
+  // Watch party state
+  const [partyOpen, setPartyOpen] = useState(false);
+  const [partyId, setPartyIdState] = useState<string | null>(null);
+  const [partyCode, setPartyCode] = useState<string | null>(null);
+  const setPartyId = useCallback((id: string | null, code?: string) => {
+    setPartyIdState(id);
+    setPartyCode(id ? (code || null) : null);
+    const next = new URLSearchParams(searchParams);
+    if (id && code) next.set("party", code); else next.delete("party");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  // Auto-join from ?party= query
+  useEffect(() => {
+    const code = searchParams.get("party");
+    if (!code || partyId) return;
+    findPartyByCode(code).then((p) => {
+      if (p) { setPartyIdState(p.id); setPartyCode(p.code); setPartyOpen(true); }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
