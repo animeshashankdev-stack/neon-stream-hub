@@ -576,6 +576,17 @@ const Watch = () => {
                   <div className="h-1.5 md:h-2 bg-white/10 rounded-full overflow-hidden absolute w-full top-1/2 -translate-y-1/2 group-hover/slider:h-2.5 transition-all shadow-inner">
                     <div className="h-full bg-gradient-to-r from-accent to-primary w-full shadow-[0_0_15px_hsl(var(--accent)/0.6)]" style={{ width: `${progress}%` }} />
                   </div>
+                  {/* Chapter markers */}
+                  {duration > 0 && chapters.map((c) => {
+                    const left = Math.min(100, (c.start_seconds / duration) * 100);
+                    const width = c.end_seconds ? Math.max(0.5, ((c.end_seconds - c.start_seconds) / duration) * 100) : 0;
+                    const color = c.kind === "intro" ? "bg-fuchsia-400/70" : c.kind === "outro" ? "bg-amber-400/70" : c.kind === "recap" ? "bg-cyan-400/70" : "bg-violet-400/70";
+                    return (
+                      <div key={c.id} className="absolute top-1/2 -translate-y-1/2 pointer-events-none" style={{ left: `${left}%`, width: width ? `${width}%` : "3px" }}>
+                        <div className={`h-2.5 ${color} ${width ? "rounded-sm" : "rounded-full w-[3px]"}`} title={c.label || c.kind} />
+                      </div>
+                    );
+                  })}
                   <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 bg-white rounded-full shadow-[0_0_10px_hsl(var(--accent)/0.8)] opacity-0 group-hover/slider:opacity-100 group-hover/slider:scale-125 transition-all" style={{ left: `${progress}%` }} />
                 </div>
                 <span className="text-[11px] md:text-sm font-medium text-white/70 w-10 md:w-12 font-mono">{formatTime(duration)}</span>
