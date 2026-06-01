@@ -1,15 +1,18 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import {
   Play, Pause, SkipBack, SkipForward, Volume2, VolumeX,
   Maximize2, Minimize, ArrowLeft, ChevronDown, Server,
-  Settings, Subtitles, MessageSquare, Lock,
+  Settings, Subtitles, MessageSquare, Lock, Users,
 } from "lucide-react";
 import { useContentDetail, useEpisodes, useVideoServers } from "@/hooks/useContent";
 import { useStreamToken } from "@/hooks/useStreamToken";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useEpisodeChapters } from "@/hooks/useEpisodeChapters";
+import { WatchPartyPanel } from "@/components/WatchPartyPanel";
+import { findPartyByCode } from "@/hooks/useWatchParty";
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
@@ -19,8 +22,9 @@ function isDirectStreamUrl(url: string): boolean {
   return /\.(mp4|webm|ogv|m3u8)(\?|$)/i.test(url);
 }
 
-function resolveStreamUrl(url: string): string {
+const AD_DOMAINS_RE = /(short\.icu|shrtfly|adfly|adf\.ly|linkvertise|ouo\.io|exe\.io|bc\.vc|cuty\.io|clk\.sh|sub2unlock|safelinkconverter)/i;
 
+function resolveStreamUrl(url: string): string {
   if (!url) return url;
   const shortMatch = url.match(/short\.icu\/([A-Za-z0-9_-]+)/);
   if (shortMatch) return `https://abysscdn.com/?v=${shortMatch[1]}`;
@@ -29,10 +33,34 @@ function resolveStreamUrl(url: string): string {
 
 const Watch = () => {
   const { contentId, episodeId } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const { data: content } = useContentDetail(contentId);
   const { data: episodes } = useEpisodes(contentId);
   const { data: servers } = useVideoServers(episodeId);
+  const { data: chapters = [] } = useEpisodeChapters(episodeId);
+
+  // Watch party state
+  const [partyOpen, setPartyOpen] = useState(false);
+  const [partyId, setPartyIdState] = useState<string | null>(null);
+  const [partyCode, setPartyCode] = useState<string | null>(null);
+  const setPartyId = useCallback((id: string | null, code?: string) => {
+    setPartyIdState(id);
+    setPartyCode(id ? (code || null) : null);
+    const next = new URLSearchParams(searchParams);
+    if (id && code) next.set("party", code); else next.delete("party");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  // Auto-join from ?party= query
+  useEffect(() => {
+    const code = searchParams.get("party");
+    if (!code || partyId) return;
+    findPartyByCode(code).then((p) => {
+      if (p) { setPartyIdState(p.id); setPartyCode(p.code); setPartyOpen(true); }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -76,7 +104,10 @@ const Watch = () => {
     return epList.filter((e) => e.season_number === selectedSeason);
   }, [epList, selectedSeason]);
 
-  const serverList = servers || [];
+  const serverList = useMemo(
+    () => (servers || []).filter((s) => s.stream_url && !AD_DOMAINS_RE.test(s.stream_url)),
+    [servers]
+  );
   const languages = useMemo(
     () => [...new Set(serverList.map((s) => s.language).filter(Boolean))],
     [serverList]
@@ -506,6 +537,19 @@ const Watch = () => {
             <Badge variant="outline" className="bg-white/10 text-white border-white/20 backdrop-blur-xl tracking-widest px-3 py-1 font-bold rounded-full text-[10px]">
               {activeServer?.quality || "HD"}
             </Badge>
+            {user && (
+              <button
+                onClick={() => setPartyOpen(true)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs backdrop-blur-md border transition-colors font-medium ${
+                  partyId
+                    ? "bg-fuchsia-500/20 text-fuchsia-200 border-fuchsia-400/40"
+                    : "bg-white/10 hover:bg-white/20 text-white/80 border-white/10"
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{partyId ? "Party" : "Watch Party"}</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -532,6 +576,17 @@ const Watch = () => {
                   <div className="h-1.5 md:h-2 bg-white/10 rounded-full overflow-hidden absolute w-full top-1/2 -translate-y-1/2 group-hover/slider:h-2.5 transition-all shadow-inner">
                     <div className="h-full bg-gradient-to-r from-accent to-primary w-full shadow-[0_0_15px_hsl(var(--accent)/0.6)]" style={{ width: `${progress}%` }} />
                   </div>
+                  {/* Chapter markers */}
+                  {duration > 0 && chapters.map((c) => {
+                    const left = Math.min(100, (c.start_seconds / duration) * 100);
+                    const width = c.end_seconds ? Math.max(0.5, ((c.end_seconds - c.start_seconds) / duration) * 100) : 0;
+                    const color = c.kind === "intro" ? "bg-fuchsia-400/70" : c.kind === "outro" ? "bg-amber-400/70" : c.kind === "recap" ? "bg-cyan-400/70" : "bg-violet-400/70";
+                    return (
+                      <div key={c.id} className="absolute top-1/2 -translate-y-1/2 pointer-events-none" style={{ left: `${left}%`, width: width ? `${width}%` : "3px" }}>
+                        <div className={`h-2.5 ${color} ${width ? "rounded-sm" : "rounded-full w-[3px]"}`} title={c.label || c.kind} />
+                      </div>
+                    );
+                  })}
                   <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 bg-white rounded-full shadow-[0_0_10px_hsl(var(--accent)/0.8)] opacity-0 group-hover/slider:opacity-100 group-hover/slider:scale-125 transition-all" style={{ left: `${progress}%` }} />
                 </div>
                 <span className="text-[11px] md:text-sm font-medium text-white/70 w-10 md:w-12 font-mono">{formatTime(duration)}</span>
@@ -611,7 +666,32 @@ const Watch = () => {
             {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
           </button>
         )}
+
+        {/* Skip intro / outro button */}
+        {!useIframe && (() => {
+          const active = chapters.find((c) => (c.kind === "intro" || c.kind === "outro" || c.kind === "recap") && currentTime >= c.start_seconds && currentTime < (c.end_seconds ?? c.start_seconds + 90));
+          if (!active || !active.end_seconds) return null;
+          return (
+            <button
+              onClick={() => { const v = videoRef.current; if (v && active.end_seconds) v.currentTime = active.end_seconds; }}
+              className="absolute bottom-28 right-6 z-40 px-4 py-2.5 rounded-full bg-fuchsia-500/90 hover:bg-fuchsia-400 text-white text-xs font-bold shadow-[0_0_25px_rgba(255,72,214,0.5)] flex items-center gap-2 animate-fade-in"
+            >
+              Skip {active.kind === "intro" ? "Intro" : active.kind === "outro" ? "Outro" : "Recap"} <SkipForward className="w-3.5 h-3.5" />
+            </button>
+          );
+        })()}
       </div>
+
+      <WatchPartyPanel
+        open={partyOpen}
+        onClose={() => setPartyOpen(false)}
+        contentId={contentId || ""}
+        episodeId={episodeId || ""}
+        partyId={partyId}
+        setPartyId={setPartyId}
+        partyCode={partyCode}
+        videoRef={videoRef}
+      />
 
       {/* Info Section Below Player */}
       <div className="flex-1 relative z-10 p-4 sm:p-6 md:p-8 lg:p-12 senpai-aurora">

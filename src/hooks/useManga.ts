@@ -117,7 +117,7 @@ export function useMangaDetail(id: string | undefined) {
     enabled: !!id,
     queryFn: async () => {
       const j = await mdFetch(`/manga/${id}?includes[]=cover_art&includes[]=author&includes[]=artist`);
-      return normalize(j.data);
+      return normalize(j.data as unknown as MangaDexManga);
     },
   });
 }

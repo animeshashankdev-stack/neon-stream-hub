@@ -73,7 +73,7 @@ const LiveChannelPlayer = ({ channel, onClose }: Props) => {
   }, [signedUrl]);
 
   useEffect(() => {
-    let hls: InstanceType<typeof Hls> | null = null;
+    let hls: any = null;
     const video = videoRef.current;
     if (!video || !signedUrl) return;
     setLoading(true);
