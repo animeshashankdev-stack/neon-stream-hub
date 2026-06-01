@@ -104,7 +104,10 @@ const Watch = () => {
     return epList.filter((e) => e.season_number === selectedSeason);
   }, [epList, selectedSeason]);
 
-  const serverList = servers || [];
+  const serverList = useMemo(
+    () => (servers || []).filter((s) => s.stream_url && !AD_DOMAINS_RE.test(s.stream_url)),
+    [servers]
+  );
   const languages = useMemo(
     () => [...new Set(serverList.map((s) => s.language).filter(Boolean))],
     [serverList]
