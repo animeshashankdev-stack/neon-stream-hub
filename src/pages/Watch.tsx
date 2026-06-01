@@ -666,7 +666,32 @@ const Watch = () => {
             {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
           </button>
         )}
+
+        {/* Skip intro / outro button */}
+        {!useIframe && (() => {
+          const active = chapters.find((c) => (c.kind === "intro" || c.kind === "outro" || c.kind === "recap") && currentTime >= c.start_seconds && currentTime < (c.end_seconds ?? c.start_seconds + 90));
+          if (!active || !active.end_seconds) return null;
+          return (
+            <button
+              onClick={() => { const v = videoRef.current; if (v && active.end_seconds) v.currentTime = active.end_seconds; }}
+              className="absolute bottom-28 right-6 z-40 px-4 py-2.5 rounded-full bg-fuchsia-500/90 hover:bg-fuchsia-400 text-white text-xs font-bold shadow-[0_0_25px_rgba(255,72,214,0.5)] flex items-center gap-2 animate-fade-in"
+            >
+              Skip {active.kind === "intro" ? "Intro" : active.kind === "outro" ? "Outro" : "Recap"} <SkipForward className="w-3.5 h-3.5" />
+            </button>
+          );
+        })()}
       </div>
+
+      <WatchPartyPanel
+        open={partyOpen}
+        onClose={() => setPartyOpen(false)}
+        contentId={contentId || ""}
+        episodeId={episodeId || ""}
+        partyId={partyId}
+        setPartyId={setPartyId}
+        partyCode={partyCode}
+        videoRef={videoRef}
+      />
 
       {/* Info Section Below Player */}
       <div className="flex-1 relative z-10 p-4 sm:p-6 md:p-8 lg:p-12 senpai-aurora">
