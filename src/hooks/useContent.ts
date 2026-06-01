@@ -74,7 +74,7 @@ interface DatabaseContent {
 }
 
 async function fetchContentWithGenres(
-  query: ReturnType<typeof supabase.from>
+  query: any
 ): Promise<ContentItem[]> {
   const { data: content, error } = await query;
   if (error) throw error;
