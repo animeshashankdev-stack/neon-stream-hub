@@ -537,6 +537,19 @@ const Watch = () => {
             <Badge variant="outline" className="bg-white/10 text-white border-white/20 backdrop-blur-xl tracking-widest px-3 py-1 font-bold rounded-full text-[10px]">
               {activeServer?.quality || "HD"}
             </Badge>
+            {user && (
+              <button
+                onClick={() => setPartyOpen(true)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs backdrop-blur-md border transition-colors font-medium ${
+                  partyId
+                    ? "bg-fuchsia-500/20 text-fuchsia-200 border-fuchsia-400/40"
+                    : "bg-white/10 hover:bg-white/20 text-white/80 border-white/10"
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{partyId ? "Party" : "Watch Party"}</span>
+              </button>
+            )}
           </div>
         </div>
 
