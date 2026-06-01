@@ -12,6 +12,7 @@ interface WatchHistoryItem {
     id: string;
     season_number: number;
     episode_number: number;
+    title?: string | null;
     content: {
       id: string;
       title: string;
