@@ -1,15 +1,18 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import {
   Play, Pause, SkipBack, SkipForward, Volume2, VolumeX,
   Maximize2, Minimize, ArrowLeft, ChevronDown, Server,
-  Settings, Subtitles, MessageSquare, Lock,
+  Settings, Subtitles, MessageSquare, Lock, Users,
 } from "lucide-react";
 import { useContentDetail, useEpisodes, useVideoServers } from "@/hooks/useContent";
 import { useStreamToken } from "@/hooks/useStreamToken";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useEpisodeChapters } from "@/hooks/useEpisodeChapters";
+import { WatchPartyPanel } from "@/components/WatchPartyPanel";
+import { findPartyByCode } from "@/hooks/useWatchParty";
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
@@ -19,8 +22,9 @@ function isDirectStreamUrl(url: string): boolean {
   return /\.(mp4|webm|ogv|m3u8)(\?|$)/i.test(url);
 }
 
-function resolveStreamUrl(url: string): string {
+const AD_DOMAINS_RE = /(short\.icu|shrtfly|adfly|adf\.ly|linkvertise|ouo\.io|exe\.io|bc\.vc|cuty\.io|clk\.sh|sub2unlock|safelinkconverter)/i;
 
+function resolveStreamUrl(url: string): string {
   if (!url) return url;
   const shortMatch = url.match(/short\.icu\/([A-Za-z0-9_-]+)/);
   if (shortMatch) return `https://abysscdn.com/?v=${shortMatch[1]}`;
