@@ -3,9 +3,12 @@ import { HelmetProvider } from "react-helmet-async";
 import App from "./App.tsx";
 import "./index.css";
 import "./styles/senpai.css";
+import { initPWA } from "./pwa/registerSW";
 
 createRoot(document.getElementById("root")!).render(
   <HelmetProvider>
     <App />
   </HelmetProvider>,
 );
+
+initPWA();

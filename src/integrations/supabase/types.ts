@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      banned_devices: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          device_hash: string
+          expires_at: string | null
+          id: string
+          reason: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          device_hash: string
+          expires_at?: string | null
+          id?: string
+          reason?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          device_hash?: string
+          expires_at?: string | null
+          id?: string
+          reason?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       channel_favorites: {
         Row: {
           channel_id: string
@@ -118,6 +148,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      endpoint_hits: {
+        Row: {
+          bucket_key: string
+          count: number
+          created_at: string
+          id: string
+          window_start: string
+        }
+        Insert: {
+          bucket_key: string
+          count?: number
+          created_at?: string
+          id?: string
+          window_start: string
+        }
+        Update: {
+          bucket_key?: string
+          count?: number
+          created_at?: string
+          id?: string
+          window_start?: string
+        }
+        Relationships: []
       }
       episode_chapters: {
         Row: {
@@ -732,6 +786,10 @@ export type Database = {
           quality: string
           server_name: string
         }[]
+      }
+      has_active_ban: {
+        Args: { _device_hash: string; _user_id: string }
+        Returns: boolean
       }
       has_role: {
         Args: {
