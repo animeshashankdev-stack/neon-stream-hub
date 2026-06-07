@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useProfile, useWatchHistory } from "@/hooks/useWatchHistory";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { Badge } from "@/components/ui/badge";
+import NotificationSettings from "@/components/pwa/NotificationSettings";
 
 const Profile = () => {
   const { user, loading: authLoading } = useAuth();
@@ -184,6 +185,11 @@ const Profile = () => {
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="mb-12">
+          <h2 className="text-xl font-display font-black text-white mb-4 tracking-tight">Notifications</h2>
+          <NotificationSettings />
         </div>
       </div>
       <Footer />

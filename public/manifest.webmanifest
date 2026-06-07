@@ -13,5 +13,25 @@
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [
+    {
+      "src": "/og-image.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Senpai.tv home"
+    },
+    {
+      "src": "/og-image.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "label": "Senpai.tv home"
+    }
+  ],
+  "shortcuts": [
+    { "name": "Search", "url": "/search", "description": "Find anime, cartoons & series" },
+    { "name": "Watchlist", "url": "/watchlist", "description": "Continue where you left off" },
+    { "name": "Live", "url": "/live", "description": "Live channels" }
   ]
 }
