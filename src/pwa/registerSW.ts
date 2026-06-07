@@ -7,6 +7,20 @@ import { registerSW } from "virtual:pwa-register";
 const APP_SW_PATH = "/sw.js";
 const PUSH_SW_PATH = "/push-sw.js";
 
+export const PWA_EVENTS = {
+  needRefresh: "pwa:need-refresh",
+  offlineReady: "pwa:offline-ready",
+} as const;
+
+let updateSWFn: ((reload?: boolean) => Promise<void>) | null = null;
+
+export function triggerAppUpdate() {
+  if (updateSWFn) return updateSWFn(true);
+  // Fallback: hard reload.
+  window.location.reload();
+  return Promise.resolve();
+}
+
 function isRefusedContext(): boolean {
   if (!import.meta.env.PROD) return true;
   try {
@@ -50,7 +64,15 @@ export function initPWA() {
   }
   if (!("serviceWorker" in navigator)) return;
 
-  registerSW({ immediate: true });
+  updateSWFn = registerSW({
+    immediate: true,
+    onNeedRefresh() {
+      window.dispatchEvent(new CustomEvent(PWA_EVENTS.needRefresh));
+    },
+    onOfflineReady() {
+      window.dispatchEvent(new CustomEvent(PWA_EVENTS.offlineReady));
+    },
+  });
 
   // Register the push notification worker on a separate scope-safe URL.
   navigator.serviceWorker.register(PUSH_SW_PATH, { scope: "/push/" }).catch(() => {});

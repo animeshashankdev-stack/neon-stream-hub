@@ -45,6 +45,14 @@ export default defineConfig(({ mode }) => ({
         clientsClaim: true,
         skipWaiting: true,
         globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff2}"],
+        // Precache critical routes — these all resolve to /index.html via SPA fallback,
+        // but warming the cache keys speeds up the first cold navigation.
+        additionalManifestEntries: [
+          { url: "/", revision: null },
+          { url: "/search", revision: null },
+          { url: "/genres", revision: null },
+          { url: "/watchlist", revision: null },
+        ],
         // Never cache streams / large media / API responses.
         runtimeCaching: [
           {
