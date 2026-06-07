@@ -23,6 +23,7 @@ import NotFound from "./pages/NotFound";
 import BottomNav from "./components/BottomNav";
 import { RequireAuth } from "./components/RequireAuth";
 import InstallPrompt from "./components/InstallPrompt";
+import UpdatePrompt from "./components/pwa/UpdatePrompt";
 
 const queryClient = new QueryClient();
 
@@ -67,6 +68,7 @@ const App = () => (
           </Routes>
           <GlobalBottomNav />
           <InstallPrompt />
+          <UpdatePrompt />
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
