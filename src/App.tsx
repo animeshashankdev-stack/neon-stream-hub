@@ -22,6 +22,7 @@ import MangaReader from "./pages/MangaReader";
 import NotFound from "./pages/NotFound";
 import BottomNav from "./components/BottomNav";
 import { RequireAuth } from "./components/RequireAuth";
+import InstallPrompt from "./components/InstallPrompt";
 
 const queryClient = new QueryClient();
 
@@ -65,6 +66,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
           <GlobalBottomNav />
+          <InstallPrompt />
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
