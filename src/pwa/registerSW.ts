@@ -63,9 +63,10 @@ export async function ensurePushSubscription(vapidPublicKey: string): Promise<Pu
   const reg = await navigator.serviceWorker.register(PUSH_SW_PATH, { scope: "/push/" });
   const existing = await reg.pushManager.getSubscription();
   if (existing) return existing;
+  const key = urlBase64ToUint8Array(vapidPublicKey);
   return reg.pushManager.subscribe({
     userVisibleOnly: true,
-    applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+    applicationServerKey: key.buffer.slice(key.byteOffset, key.byteOffset + key.byteLength) as ArrayBuffer,
   });
 }
 
