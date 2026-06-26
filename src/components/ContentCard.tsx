@@ -1,4 +1,5 @@
 import { Play, Star } from "lucide-react";
+import SmartImage from "@/components/SmartImage";
 
 interface ContentCardProps {
   image: string;
@@ -13,13 +14,14 @@ const ContentCard = ({ image, title, subtitle, rating, className = "", rank }: C
   return (
     <div className={`group relative flex-shrink-0 w-[160px] sm:w-[180px] cursor-pointer ${className}`}>
       <div className="relative w-full aspect-[2/3] rounded-[20px] overflow-hidden border border-white/10 transition-all duration-300 group-hover:scale-105 group-hover:shadow-[0_0_25px_rgba(167,139,250,0.4)] group-hover:border-violet-400/50 bg-gradient-to-br from-slate-800 to-slate-950">
-        <img
+        <SmartImage
           src={image}
           alt={title}
           className="w-full h-full object-cover"
           loading="lazy"
           width={512}
           height={768}
+          debugLabel={`card:${title}`}
         />
         {/* Rank badge */}
         {rank && rank <= 3 && (

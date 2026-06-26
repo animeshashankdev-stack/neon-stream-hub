@@ -8,6 +8,7 @@ import { useContentDetail, useEpisodes, useRecommendations } from "@/hooks/useCo
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsInWatchlist, useToggleWatchlist } from "@/hooks/useWatchlist";
 import { Badge } from "@/components/ui/badge";
+import SmartImage from "@/components/SmartImage";
 
 const formatDuration = (seconds: number) => {
   const m = Math.floor(seconds / 60);
@@ -66,10 +67,12 @@ const ContentDetail = () => {
       <div className="relative w-full h-[65vh] min-h-[450px] flex pt-16 z-10">
         {/* Left Art Area */}
         <div className="w-1/2 h-full relative overflow-hidden hidden md:flex items-end">
-          <img
-            src={content.banner_url || content.poster_url || ""}
+          <SmartImage
+            src={content.banner_url}
+            fallbacks={[content.poster_url, content.thumbnail_url]}
             alt={content.title}
             className="absolute inset-0 w-full h-full object-cover opacity-40"
+            debugLabel={`banner:${content.title}`}
           />
           <div className="absolute inset-0 bg-gradient-to-br from-[#0D0A2A] via-[#0D0A2A]/60 to-transparent z-10" />
           <div className="absolute right-0 top-0 w-32 h-full bg-gradient-to-l from-[#0D0A2A] to-transparent z-20" />
@@ -222,10 +225,24 @@ const ContentDetail = () => {
                   className="group flex flex-col sm:flex-row gap-4 p-4 rounded-[16px] bg-white/5 border border-white/10 hover:border-violet-400/40 hover:shadow-[0_0_15px_rgba(167,139,250,0.2)] transition-all cursor-pointer items-center"
                 >
                   <div className="relative w-full sm:w-36 aspect-video rounded-[12px] bg-gradient-to-br from-slate-800 to-slate-950 overflow-hidden shrink-0">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="font-black text-3xl text-white/20 group-hover:text-white/40 transition-colors">{String(ep.episode_number).padStart(2, "0")}</span>
+                    {ep.thumbnail_url ? (
+                      <SmartImage
+                        src={ep.thumbnail_url}
+                        fallbacks={[content.thumbnail_url, content.banner_url, content.poster_url]}
+                        alt={ep.title || `Episode ${ep.episode_number}`}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        loading="lazy"
+                        debugLabel={`ep${ep.episode_number}`}
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="font-black text-3xl text-white/20 group-hover:text-white/40 transition-colors">{String(ep.episode_number).padStart(2, "0")}</span>
+                      </div>
+                    )}
+                    <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur text-[10px] font-bold text-white/90">
+                      EP {String(ep.episode_number).padStart(2, "0")}
                     </div>
-                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 backdrop-blur-[2px] flex items-center justify-center">
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-black/30 backdrop-blur-[2px] flex items-center justify-center">
                       <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur border border-white/30 flex items-center justify-center">
                         <Play className="w-4 h-4 text-white fill-current ml-0.5" />
                       </div>
@@ -261,8 +278,15 @@ const ContentDetail = () => {
               <div className="space-y-4">
                 {recommendations.slice(0, 6).map((item) => (
                   <Link key={item.id} to={`/content/${item.id}`} className="flex gap-4 items-center group cursor-pointer">
-                    <div className="w-14 aspect-[2/3] rounded-[10px] bg-gradient-to-br from-slate-800 to-slate-950 overflow-hidden shrink-0 border border-white/10 group-hover:border-teal-400/50 transition-colors">
-                      <img src={item.poster_url || ""} alt={item.title} className="w-full h-full object-cover" loading="lazy" />
+                    <div className="relative w-14 aspect-[2/3] rounded-[10px] bg-gradient-to-br from-slate-800 to-slate-950 overflow-hidden shrink-0 border border-white/10 group-hover:border-teal-400/50 transition-colors">
+                      <SmartImage
+                        src={item.poster_url}
+                        fallbacks={[item.thumbnail_url, item.banner_url]}
+                        alt={item.title}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                        debugLabel={`rec:${item.title}`}
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h5 className="font-bold text-sm text-white group-hover:text-teal-300 transition-colors line-clamp-1 mb-1">{item.title}</h5>
