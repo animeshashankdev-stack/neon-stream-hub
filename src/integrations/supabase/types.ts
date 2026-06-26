@@ -501,6 +501,39 @@ export type Database = {
         }
         Relationships: []
       }
+      stream_health: {
+        Row: {
+          checked_at: string
+          error: string | null
+          id: string
+          kind: string
+          latency_ms: number | null
+          ref_id: string
+          status: string
+          url: string
+        }
+        Insert: {
+          checked_at?: string
+          error?: string | null
+          id?: string
+          kind: string
+          latency_ms?: number | null
+          ref_id: string
+          status?: string
+          url: string
+        }
+        Update: {
+          checked_at?: string
+          error?: string | null
+          id?: string
+          kind?: string
+          latency_ms?: number | null
+          ref_id?: string
+          status?: string
+          url?: string
+        }
+        Relationships: []
+      }
       stream_tokens: {
         Row: {
           created_at: string
