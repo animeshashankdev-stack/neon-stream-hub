@@ -29,12 +29,16 @@ export interface Episode {
   duration_seconds: number | null;
 }
 
-const ANIMESALT_LOGO = "";
 const PLACEHOLDER_POSTER = "https://i.pinimg.com/1200x/c2/df/68/c2df689d17ba78f758f39877cbd63f8c.jpg";
+
+const LOGO_PATTERNS = [
+  "AnimeSaltLong",
+  "crunchyroll-193x193",
+];
 
 function cleanImageUrl(url: string | null): string | null {
   if (!url) return null;
-  if (url.includes(ANIMESALT_LOGO)) return null;
+  if (LOGO_PATTERNS.some((p) => url.includes(p))) return null;
   return url;
 }
 
