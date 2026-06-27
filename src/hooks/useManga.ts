@@ -139,7 +139,7 @@ export function useMangaChapters(id: string | undefined) {
       async function fetchAll(langFilter: string): Promise<MangaChapter[]> {
         const out: MangaChapter[] = [];
         let offset = 0;
-        for (let page = 0; page < 5; page++) {
+        for (let page = 0; page < 20; page++) {
           const j = await mdFetch(
             `/manga/${id}/feed?limit=100&offset=${offset}${langFilter}&order[chapter]=asc&includes[]=scanlation_group`,
           );

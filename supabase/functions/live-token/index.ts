@@ -46,19 +46,7 @@ Deno.serve(async (req) => {
     }
     const userId = claims.claims.sub as string;
 
-    // Require premium or admin
-    const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const [{ data: profile }, { data: adminRole }] = await Promise.all([
-      admin.from("profiles").select("is_premium").eq("user_id", userId).maybeSingle(),
-      admin.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin").maybeSingle(),
-    ]);
-    const allowed = !!adminRole || profile?.is_premium === true;
-    if (!allowed) {
-      return new Response(JSON.stringify({ error: "Subscription required" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    // Live TV is free for all authenticated users (no premium gate).
 
     const body = await req.json().catch(() => ({}));
     const { channelUrl } = body as { channelUrl?: string };
