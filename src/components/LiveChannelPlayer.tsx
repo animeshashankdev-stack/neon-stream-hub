@@ -118,15 +118,15 @@ const LiveChannelPlayer = ({ channel, onClose }: Props) => {
             }
             if (data.fatal) {
               if (isAuthFail) {
-                // Recover by forcing a new signed URL
-              setRefreshKey((k) => k + 1);
-              return;
+                setRefreshKey((k) => k + 1);
+                return;
+              }
+              markChannelBroken(channel.id);
+              setError("Stream unavailable. This channel has been hidden from the list.");
+              setLoading(false);
             }
-            markChannelBroken(channel.id);
-            setError("Stream unavailable. This channel has been hidden from the list.");
-            setLoading(false);
           }
-        });
+        );
       } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
         video.src = url;
         video.addEventListener("loadedmetadata", () => { setLoading(false); video.play().catch(() => {}); });
