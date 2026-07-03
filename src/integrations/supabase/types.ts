@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_metrics: {
+        Row: {
+          created_at: string
+          event_name: string
+          event_source: string
+          id: string
+          labels: Json
+          metric_value: number
+        }
+        Insert: {
+          created_at?: string
+          event_name: string
+          event_source: string
+          id?: string
+          labels?: Json
+          metric_value?: number
+        }
+        Update: {
+          created_at?: string
+          event_name?: string
+          event_source?: string
+          id?: string
+          labels?: Json
+          metric_value?: number
+        }
+        Relationships: []
+      }
       banned_devices: {
         Row: {
           created_at: string
@@ -41,6 +68,42 @@ export type Database = {
           id?: string
           reason?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      bot_users: {
+        Row: {
+          allowed: boolean | null
+          allowed_at: string | null
+          can_watch: boolean | null
+          created_at: string | null
+          first_name: string | null
+          id: string
+          requested: boolean | null
+          telegram_id: string
+          username: string | null
+        }
+        Insert: {
+          allowed?: boolean | null
+          allowed_at?: string | null
+          can_watch?: boolean | null
+          created_at?: string | null
+          first_name?: string | null
+          id?: string
+          requested?: boolean | null
+          telegram_id: string
+          username?: string | null
+        }
+        Update: {
+          allowed?: boolean | null
+          allowed_at?: string | null
+          can_watch?: boolean | null
+          created_at?: string | null
+          first_name?: string | null
+          id?: string
+          requested?: boolean | null
+          telegram_id?: string
+          username?: string | null
         }
         Relationships: []
       }
@@ -700,6 +763,73 @@ export type Database = {
         }
         Relationships: []
       }
+      watch_party_events: {
+        Row: {
+          created_at: string
+          event_payload: Json
+          event_type: string
+          id: string
+          party_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_payload?: Json
+          event_type: string
+          id?: string
+          party_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_payload?: Json
+          event_type?: string
+          id?: string
+          party_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watch_party_events_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "watch_parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      watch_party_members: {
+        Row: {
+          id: string
+          joined_at: string
+          party_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string
+          party_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          party_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watch_party_members_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "watch_parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       watch_party_messages: {
         Row: {
           body: string
@@ -808,6 +938,10 @@ export type Database = {
           _target: string
         }
         Returns: undefined
+      }
+      can_access_watch_party: {
+        Args: { _party_id: string; _user_id: string }
+        Returns: boolean
       }
       get_episode_servers: {
         Args: { _episode_id: string }
