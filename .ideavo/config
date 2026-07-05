@@ -1,0 +1,58 @@
+{
+  "systemSetup": [],
+  "templateName": "custom",
+  "projectDependencies": [
+    {
+      "name": "Install Root Dependencies",
+      "command": "bun install"
+    },
+    {
+      "name": "Install Next.js Dependencies",
+      "command": "cd senpai-tv-next && bun install"
+    }
+  ],
+  "codeChecks": [
+    {
+      "name": "Run Tests",
+      "command": "bun run test"
+    },
+    {
+      "name": "Check Lint",
+      "command": "bun run lint"
+    }
+  ],
+  "buildSteps": [
+    {
+      "name": "Build Root App",
+      "command": "bun run build"
+    },
+    {
+      "name": "Build Next.js App",
+      "command": "cd senpai-tv-next && bun run build"
+    }
+  ],
+  "runStep": [
+    {
+      "name": "Run Dev Server",
+      "command": "bun run dev -- --host 0.0.0.0 --port 8080",
+      "port": "8080"
+    }
+  ],
+  "deploySteps": [],
+  "cleanupFiles": [
+    "dist/",
+    "build/",
+    "node_modules/",
+    "senpai-tv-next/.next/",
+    "senpai-tv-next/node_modules/",
+    ".output/",
+    "*.log"
+  ],
+  "packageManager": "bun",
+  "envPaths": [
+    {
+      "name": "default",
+      "path": ".env"
+    }
+  ]
+}
