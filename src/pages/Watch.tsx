@@ -1,9 +1,10 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { useParams, Link, useSearchParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import {
   Play, Pause, SkipBack, SkipForward, Volume2, VolumeX,
   Maximize2, Minimize, ArrowLeft, ChevronDown, Server,
-  Settings, Subtitles, MessageSquare, Lock, Users,
+  Settings, Subtitles, MessageSquare, Lock, Users, Loader2,
 } from "lucide-react";
 import { useContentDetail, useEpisodes, useVideoServers } from "@/hooks/useContent";
 import { useStreamToken } from "@/hooks/useStreamToken";
@@ -162,7 +163,7 @@ const Watch = () => {
     loadTimerRef.current = window.setTimeout(() => {
       // load took too long → treat as failure
       handleIframeFail();
-    }, 8000);
+    }, 6000);
     return () => { if (loadTimerRef.current) clearTimeout(loadTimerRef.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [streamUrl, useIframe, iframeKey]);
@@ -332,8 +333,48 @@ const Watch = () => {
   const posterImage = content?.poster_url || content?.thumbnail_url || "";
   const epFallback = content?.thumbnail_url || content?.poster_url || "";
 
+  // Are we still discovering / cycling servers silently?
+  const isDiscovering =
+    !user
+      ? false
+      : servers === undefined || (useIframe && !!streamUrl && !iframeError && autoTried.size < langServers.length);
+  const canonicalUrl = typeof window !== "undefined"
+    ? `${window.location.origin}/watch/${contentId}/${episodeId}`
+    : `/watch/${contentId}/${episodeId}`;
+  const episodeTitle = currentEp
+    ? `${content?.title || "Watch"} — S${currentEp.season_number}E${currentEp.episode_number}${currentEp.title ? `: ${currentEp.title}` : ""}`
+    : content?.title || "Watch";
+  const episodeDesc = currentEp?.description || content?.description || `Stream ${content?.title || "episode"} on Senpai.tv`;
+
   return (
     <div className="senpai-root min-h-screen bg-[#080818] text-white font-body selection:bg-accent/30 flex flex-col">
+      {content && (
+        <Helmet>
+          <title>{episodeTitle}</title>
+          <meta name="description" content={episodeDesc.slice(0, 155)} />
+          <link rel="canonical" href={canonicalUrl} />
+          <meta property="og:title" content={episodeTitle} />
+          <meta property="og:description" content={episodeDesc.slice(0, 155)} />
+          <meta property="og:type" content="video.episode" />
+          <meta property="og:url" content={canonicalUrl} />
+          {(content.banner_url || content.poster_url) && (
+            <meta property="og:image" content={content.banner_url || content.poster_url || ""} />
+          )}
+          <meta name="twitter:card" content="summary_large_image" />
+          <script type="application/ld+json">
+            {JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "TVEpisode",
+              name: currentEp?.title || `Episode ${currentEp?.episode_number || 1}`,
+              episodeNumber: currentEp?.episode_number,
+              partOfSeason: currentEp ? { "@type": "TVSeason", seasonNumber: currentEp.season_number } : undefined,
+              partOfSeries: { "@type": "TVSeries", name: content.title },
+              image: content.banner_url || content.poster_url || undefined,
+              url: canonicalUrl,
+            })}
+          </script>
+        </Helmet>
+      )}
       {/* Video Player Area */}
       <div
         ref={containerRef}
