@@ -347,7 +347,7 @@ const Watch = () => {
   const episodeDesc = currentEp?.description || content?.description || `Stream ${content?.title || "episode"} on Senpai.tv`;
 
   return (
-    <div className="senpai-root min-h-screen bg-[#080818] text-white font-body selection:bg-accent/30 flex flex-col">
+    <div className="senpai-root min-h-screen bg-[#1a1a2e] text-white font-body selection:bg-[#4ade80]/30 flex flex-col">
       {content && (
         <Helmet>
           <title>{episodeTitle}</title>

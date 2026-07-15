@@ -26,15 +26,15 @@ const HeroBanner = () => {
 
   if (isLoading) {
     return (
-      <section className="relative w-full h-[85vh] min-h-[600px] bg-gradient-to-br from-[#0F0A2E] to-[#1A0A3E] animate-pulse">
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0F0A2E] via-transparent to-transparent" />
+      <section className="relative w-full h-[85vh] min-h-[600px] bg-gradient-to-br from-[#1a1a2e] to-[#141428] animate-pulse">
+        <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a2e] via-transparent to-transparent" />
       </section>
     );
   }
 
   if (!current) {
     return (
-      <section className="relative w-full h-[70vh] min-h-[500px] bg-gradient-to-br from-[#0F0A2E] via-[#1A0A3E] to-[#0A1628] flex items-center justify-center">
+      <section className="relative w-full h-[70vh] min-h-[500px] bg-gradient-to-br from-[#1a1a2e] via-[#1a1a2e] to-[#141428] flex items-center justify-center">
         <div className="text-center">
           <p className="text-white/50 text-lg font-medium">Discover your next obsession</p>
         </div>
@@ -57,8 +57,8 @@ const HeroBanner = () => {
       ))}
 
       {/* Gradient overlays */}
-      <div className="absolute inset-0 bg-gradient-to-t from-[#0F0A2E] via-[#0F0A2E]/60 to-transparent" />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#0F0A2E]/90 via-[#0F0A2E]/30 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a2e] via-[#1a1a2e]/60 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#1a1a2e]/90 via-[#1a1a2e]/30 to-transparent" />
 
       {/* Ambient glow effects */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_90%_at_65%_40%,rgba(244,114,182,0.15),transparent)] mix-blend-screen" />
