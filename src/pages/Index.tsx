@@ -16,7 +16,7 @@ const Index = () => {
   const { data: trending, isLoading } = useContentList();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0F0A2E] via-[#1A0A3E] to-[#0A1628] text-white">
+    <div className="min-h-screen bg-[#1a1a2e] bg-gradient-to-br from-[#1a1a2e] via-[#1a1a2e] to-[#141428] text-white">
       <Navbar />
       <HeroBanner />
 
