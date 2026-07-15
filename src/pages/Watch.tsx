@@ -550,7 +550,7 @@ const Watch = () => {
             )}
 
             {/* Server selector */}
-            {langServers.length > 1 && (
+            {langServers.length > 1 && !isDiscovering && (
               <div className="relative">
                 <button
                   onClick={() => { setShowServerMenu(!showServerMenu); setShowLangMenu(false); }}
