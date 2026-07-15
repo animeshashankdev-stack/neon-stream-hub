@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { Play, Plus, Check, Star, Film } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -56,9 +57,53 @@ const ContentDetail = () => {
   }
 
   const progress = filteredEpisodes.length > 0 ? Math.round((1 / filteredEpisodes.length) * 100) : 0;
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const canonicalUrl = `${origin}/content/${content.id}`;
+  const seoTitle = `${content.title}${content.release_year ? ` (${content.release_year})` : ""} — Watch on Senpai.tv`;
+  const seoDesc = (content.description || `Stream ${content.title} on Senpai.tv in HD.`).slice(0, 155);
+  const ogImage = content.banner_url || content.poster_url || content.thumbnail_url || "";
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": content.type === "series" ? "TVSeries" : "Movie",
+    name: content.title,
+    description: content.description || undefined,
+    image: ogImage || undefined,
+    genre: content.genres || undefined,
+    datePublished: content.release_year ? String(content.release_year) : undefined,
+    aggregateRating: content.rating
+      ? { "@type": "AggregateRating", ratingValue: content.rating, bestRating: 10, ratingCount: 1 }
+      : undefined,
+    numberOfEpisodes: content.type === "series" ? episodes?.length : undefined,
+    url: canonicalUrl,
+  };
+  const breadcrumbs = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: origin || "/" },
+      { "@type": "ListItem", position: 2, name: content.type === "series" ? "Series" : "Movies", item: `${origin}/genres` },
+      { "@type": "ListItem", position: 3, name: content.title, item: canonicalUrl },
+    ],
+  };
 
   return (
     <div className="min-h-screen w-full bg-[#1a1a2e] text-white relative overflow-hidden pb-24" style={BARLOW}>
+      <Helmet>
+        <title>{seoTitle}</title>
+        <meta name="description" content={seoDesc} />
+        <link rel="canonical" href={canonicalUrl} />
+        <meta property="og:title" content={seoTitle} />
+        <meta property="og:description" content={seoDesc} />
+        <meta property="og:type" content={content.type === "series" ? "video.tv_show" : "video.movie"} />
+        <meta property="og:url" content={canonicalUrl} />
+        {ogImage && <meta property="og:image" content={ogImage} />}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={seoTitle} />
+        <meta name="twitter:description" content={seoDesc} />
+        {ogImage && <meta name="twitter:image" content={ogImage} />}
+        <script type="application/ld+json">{JSON.stringify(schema)}</script>
+        <script type="application/ld+json">{JSON.stringify(breadcrumbs)}</script>
+      </Helmet>
       <Navbar />
 
       {/* Ambient Aurora */}
