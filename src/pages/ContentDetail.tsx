@@ -57,8 +57,7 @@ const ContentDetail = () => {
   }
 
   const progress = filteredEpisodes.length > 0 ? Math.round((1 / filteredEpisodes.length) * 100) : 0;
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const canonicalUrl = `${origin}/content/${content.id}`;
+  const canonicalUrl = `https://ani.shashanksv.com/content/${content.id}`;
   const seoTitle = `${content.title}${content.release_year ? ` (${content.release_year})` : ""} — Watch on Senpai.tv`;
   const seoDesc = (content.description || `Stream ${content.title} on Senpai.tv in HD.`).slice(0, 155);
   const ogImage = content.banner_url || content.poster_url || content.thumbnail_url || "";

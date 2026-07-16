@@ -67,7 +67,7 @@ const Search = () => {
       <Helmet>
         <title>{debouncedQuery ? `${debouncedQuery} — Search` : "Search"} · Senpai.tv</title>
         <meta name="description" content="Search anime, cartoons, movies and series. Filter by genre, year and language." />
-        <link rel="canonical" href="https://neon-curator-hub.lovable.app/search" />
+        <link rel="canonical" href="https://ani.shashanksv.com/search" />
       </Helmet>
 
       <div className="mb-8">

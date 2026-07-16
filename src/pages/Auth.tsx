@@ -1,33 +1,34 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Eye, EyeOff, Sparkles, Check } from "lucide-react";
+import { Check } from "lucide-react";
+
+const GoogleIcon = () => (
+  <svg viewBox="0 0 48 48" className="w-5 h-5" aria-hidden="true">
+    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+  </svg>
+);
 
 const Auth = () => {
-  const [mode, setMode] = useState<"login" | "signup">("login");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState("");
-  const { signIn, signUp } = useAuth();
+  const { user, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(""); setSuccess(""); setLoading(true);
-    if (mode === "login") {
-      const { error } = await signIn(email, password);
-      if (error) setError(error.message);
-      else navigate("/");
-    } else {
-      const { error } = await signUp(email, password, displayName);
-      if (error) setError(error.message);
-      else setSuccess("Check your email to confirm your account!");
+  useEffect(() => {
+    if (user) {
+      const params = new URLSearchParams(window.location.search);
+      navigate(params.get("next") || "/", { replace: true });
     }
-    setLoading(false);
+  }, [user, navigate]);
+
+  const handleGoogle = async () => {
+    setError(""); setLoading(true);
+    const { error } = await signInWithGoogle();
+    if (error) { setError(error.message); setLoading(false); }
   };
 
   const features = [
@@ -104,104 +105,49 @@ const Auth = () => {
 
         <div className="relative z-10 w-full max-w-md mt-16 lg:mt-0">
           <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl p-7 sm:p-8 shadow-[0_30px_80px_rgba(0,0,0,0.5)]">
-            <div className="mb-6">
-              <h2 className="text-2xl font-black tracking-tight mb-1">
-                {mode === "login" ? "Welcome back, senpai." : "Join the club."}
+            <div className="mb-8">
+              <h2 className="text-2xl sm:text-3xl font-black tracking-tight mb-2">
+                Welcome, senpai.
               </h2>
               <p className="text-sm text-white/50">
-                {mode === "login" ? "Pick up where you left off." : "Free account · No card needed."}
+                Sign in with your Google account to stream, save, and sync across devices.
               </p>
             </div>
 
-            <div className="flex mb-6 bg-white/5 rounded-full p-1 border border-white/10">
-              <button
-                onClick={() => { setMode("login"); setError(""); setSuccess(""); }}
-                className={`flex-1 py-2 rounded-full text-sm font-bold transition-all ${
-                  mode === "login"
-                    ? "bg-gradient-to-r from-teal-400 to-cyan-500 text-black shadow-[0_0_20px_rgba(45,212,191,0.4)]"
-                    : "text-white/60 hover:text-white"
-                }`}
-              >
-                Sign In
-              </button>
-              <button
-                onClick={() => { setMode("signup"); setError(""); setSuccess(""); }}
-                className={`flex-1 py-2 rounded-full text-sm font-bold transition-all ${
-                  mode === "signup"
-                    ? "bg-gradient-to-r from-teal-400 to-cyan-500 text-black shadow-[0_0_20px_rgba(45,212,191,0.4)]"
-                    : "text-white/60 hover:text-white"
-                }`}
-              >
-                Sign Up
-              </button>
+            <button
+              type="button"
+              onClick={handleGoogle}
+              disabled={loading}
+              className="w-full py-3.5 rounded-xl bg-white text-[#1a1a2e] font-bold text-sm hover:bg-white/90 transition-all disabled:opacity-60 flex items-center justify-center gap-3 shadow-[0_10px_30px_rgba(255,255,255,0.15)]"
+            >
+              {loading ? (
+                <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+              ) : (
+                <>
+                  <GoogleIcon />
+                  Continue with Google
+                </>
+              )}
+            </button>
+
+            {error && (
+              <p className="mt-4 text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                {error}
+              </p>
+            )}
+
+            <div className="mt-8 space-y-3">
+              {["No password to remember", "Your Google profile picture — automatically", "One tap, everywhere you sign in"].map((f) => (
+                <div key={f} className="flex items-start gap-3 text-white/70 text-sm">
+                  <span className="mt-0.5 w-5 h-5 rounded-full bg-teal-400/20 border border-teal-400/30 flex items-center justify-center shrink-0">
+                    <Check className="w-3 h-3 text-teal-300" />
+                  </span>
+                  {f}
+                </div>
+              ))}
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {mode === "signup" && (
-                <div>
-                  <label className="text-[11px] text-white/50 mb-1.5 block font-bold uppercase tracking-wider">Display Name</label>
-                  <input
-                    type="text"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="Your name"
-                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-teal-400/50 focus:bg-white/10 text-sm transition-colors"
-                  />
-                </div>
-              )}
-              <div>
-                <label className="text-[11px] text-white/50 mb-1.5 block font-bold uppercase tracking-wider">Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  required
-                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-teal-400/50 focus:bg-white/10 text-sm transition-colors"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] text-white/50 mb-1.5 block font-bold uppercase tracking-wider">Password</label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    required
-                    minLength={6}
-                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-teal-400/50 focus:bg-white/10 text-sm transition-colors pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              {error && <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{error}</p>}
-              {success && <p className="text-teal-300 text-xs bg-teal-500/10 border border-teal-400/20 rounded-lg px-3 py-2">{success}</p>}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-teal-400 to-cyan-500 text-black font-black text-sm hover:shadow-[0_0_30px_rgba(45,212,191,0.5)] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {loading ? (
-                  <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4" />
-                    {mode === "login" ? "Sign In" : "Create Account"}
-                  </>
-                )}
-              </button>
-            </form>
-
-            <p className="text-center text-xs text-white/40 mt-6">
+            <p className="text-center text-xs text-white/40 mt-8">
               By continuing you agree to our Terms & Privacy Policy.
             </p>
           </div>

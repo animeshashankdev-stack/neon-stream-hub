@@ -1,7 +1,7 @@
 import { writeFileSync, mkdirSync } from "fs";
 import { resolve } from "path";
 
-const BASE_URL = "https://neon-curator-hub.lovable.app";
+const BASE_URL = "https://ani.shashanksv.com";
 interface Entry { path: string; changefreq?: string; priority?: string }
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || "https://zoduthqkxhphvlldxyjr.supabase.co";

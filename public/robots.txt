@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://neon-curator-hub.lovable.app/sitemap.xml
+Sitemap: https://ani.shashanksv.com/sitemap.xml

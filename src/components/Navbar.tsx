@@ -77,7 +77,16 @@ const Navbar = () => {
                 className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center p-[2px] shadow-[0_0_15px_rgba(45,212,191,0.4)]"
               >
                 <div className="w-full h-full rounded-full bg-[#080810] flex items-center justify-center overflow-hidden">
-                  <span className="text-xs font-bold text-teal-400">{user.email?.charAt(0).toUpperCase()}</span>
+                  {(user.user_metadata?.avatar_url || user.user_metadata?.picture) ? (
+                    <img
+                      src={user.user_metadata.avatar_url || user.user_metadata.picture}
+                      alt="Profile"
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover rounded-full"
+                    />
+                  ) : (
+                    <span className="text-xs font-bold text-teal-400">{user.email?.charAt(0).toUpperCase()}</span>
+                  )}
                 </div>
               </button>
               {showUserMenu && (
