@@ -36,7 +36,7 @@ const Manga = () => {
       <Helmet>
         <title>Manga — Senpai.tv</title>
         <meta name="description" content="Discover and read manga in a clean, ad-light reader. Powered by MangaDex." />
-        <link rel="canonical" href="https://neon-curator-hub.lovable.app/manga" />
+        <link rel="canonical" href="https://ani.shashanksv.com/manga" />
         <meta property="og:title" content="Manga — Senpai.tv" />
         <meta property="og:description" content="Discover and read manga in a clean, ad-light reader." />
       </Helmet>

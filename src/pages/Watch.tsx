@@ -338,9 +338,7 @@ const Watch = () => {
     !user
       ? false
       : servers === undefined || (useIframe && !!streamUrl && !iframeError && autoTried.size < langServers.length);
-  const canonicalUrl = typeof window !== "undefined"
-    ? `${window.location.origin}/watch/${contentId}/${episodeId}`
-    : `/watch/${contentId}/${episodeId}`;
+  const canonicalUrl = `https://ani.shashanksv.com/watch/${contentId}/${episodeId}`;
   const episodeTitle = currentEp
     ? `${content?.title || "Watch"} — S${currentEp.season_number}E${currentEp.episode_number}${currentEp.title ? `: ${currentEp.title}` : ""}`
     : content?.title || "Watch";
