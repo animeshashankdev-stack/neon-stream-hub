@@ -45,9 +45,18 @@ const Profile = () => {
             <div className="relative shrink-0">
               <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 p-1 shadow-[0_0_30px_rgba(45,212,191,0.5)]">
                 <div className="w-full h-full rounded-full bg-[#080810] flex items-center justify-center border-4 border-[#080810]/50 overflow-hidden">
-                  <span className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-teal-300 to-cyan-300">
-                    {user?.email?.charAt(0).toUpperCase() || "?"}
-                  </span>
+                  {(profile?.avatar_url || user?.user_metadata?.avatar_url || user?.user_metadata?.picture) ? (
+                    <img
+                      src={profile?.avatar_url || user?.user_metadata?.avatar_url || user?.user_metadata?.picture}
+                      alt="Profile"
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover rounded-full"
+                    />
+                  ) : (
+                    <span className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-teal-300 to-cyan-300">
+                      {user?.email?.charAt(0).toUpperCase() || "?"}
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center hover:bg-white/20 cursor-pointer transition-colors shadow-lg">
