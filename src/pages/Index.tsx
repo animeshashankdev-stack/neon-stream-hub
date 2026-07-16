@@ -20,25 +20,34 @@ const Index = () => {
       <Navbar />
       <HeroBanner />
 
-      {/* Stats Row */}
-      <div className="flex flex-wrap justify-center gap-4 md:gap-6 -mt-8 relative z-30 px-6">
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[20px] px-5 md:px-6 py-3 flex items-center gap-3 shadow-[0_8px_30px_rgba(0,0,0,0.2)]">
-          <div className="w-10 h-10 rounded-full bg-teal-500/20 flex items-center justify-center">
-            <User className="w-5 h-5 text-teal-400" />
+      {/* Feature Row — cyber-glass */}
+      <div className="max-w-7xl mx-auto px-6 md:px-12 py-12 grid grid-cols-1 md:grid-cols-3 gap-6 relative z-30">
+        <div className="p-6 bg-white/[0.02] border border-white/5 hover:border-[#4ade80]/30 rounded-2xl flex items-center gap-4 transition-colors">
+          <div className="w-12 h-12 rounded-full bg-[#4ade80]/10 flex items-center justify-center text-[#4ade80]">
+            <User className="w-6 h-6" />
           </div>
-          <p className="font-bold text-white text-sm">10M+ Members</p>
+          <div>
+            <div className="text-xl font-bold font-mono">10M+</div>
+            <div className="text-xs text-white/40 uppercase tracking-widest">Active Members</div>
+          </div>
         </div>
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[20px] px-5 md:px-6 py-3 flex items-center gap-3 shadow-[0_8px_30px_rgba(0,0,0,0.2)]">
-          <div className="w-10 h-10 rounded-full bg-violet-500/20 flex items-center justify-center">
-            <Play className="w-5 h-5 text-violet-400" />
+        <div className="p-6 bg-white/[0.02] border border-white/5 hover:border-[#a78bfa]/30 rounded-2xl flex items-center gap-4 transition-colors">
+          <div className="w-12 h-12 rounded-full bg-[#a78bfa]/10 flex items-center justify-center text-[#a78bfa]">
+            <Play className="w-6 h-6" />
           </div>
-          <p className="font-bold text-white text-sm">4K Ultra HD</p>
+          <div>
+            <div className="text-xl font-bold font-mono">4K Ultra HD</div>
+            <div className="text-xs text-white/40 uppercase tracking-widest">High Fidelity</div>
+          </div>
         </div>
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[20px] px-5 md:px-6 py-3 flex items-center gap-3 shadow-[0_8px_30px_rgba(0,0,0,0.2)]">
-          <div className="w-10 h-10 rounded-full bg-pink-500/20 flex items-center justify-center">
-            <Bell className="w-5 h-5 text-pink-400" />
+        <div className="p-6 bg-white/[0.02] border border-white/5 hover:border-[#4ade80]/30 rounded-2xl flex items-center gap-4 transition-colors">
+          <div className="w-12 h-12 rounded-full bg-[#4ade80]/10 flex items-center justify-center text-[#4ade80]">
+            <Bell className="w-6 h-6" />
           </div>
-          <p className="font-bold text-white text-sm">Sub & Dub</p>
+          <div>
+            <div className="text-xl font-bold font-mono">Sub &amp; Dub</div>
+            <div className="text-xs text-white/40 uppercase tracking-widest">Native Voiceover</div>
+          </div>
         </div>
       </div>
 
