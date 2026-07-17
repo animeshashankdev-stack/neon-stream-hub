@@ -24,6 +24,7 @@ import BottomNav from "./components/BottomNav";
 import { RequireAuth } from "./components/RequireAuth";
 import InstallPrompt from "./components/InstallPrompt";
 import UpdatePrompt from "./components/pwa/UpdatePrompt";
+import DevToolsGuard from "./components/DevToolsGuard";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <PageViewTracker />
+          <DevToolsGuard />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/search" element={<Search />} />
