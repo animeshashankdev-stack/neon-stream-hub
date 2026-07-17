@@ -359,6 +359,11 @@ const Watch = () => {
             <meta property="og:image" content={content.banner_url || content.poster_url || ""} />
           )}
           <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content={episodeTitle} />
+          <meta name="twitter:description" content={episodeDesc.slice(0, 155)} />
+          {(content.banner_url || content.poster_url) && (
+            <meta name="twitter:image" content={content.banner_url || content.poster_url || ""} />
+          )}
           <script type="application/ld+json">
             {JSON.stringify({
               "@context": "https://schema.org",
@@ -366,9 +371,24 @@ const Watch = () => {
               name: currentEp?.title || `Episode ${currentEp?.episode_number || 1}`,
               episodeNumber: currentEp?.episode_number,
               partOfSeason: currentEp ? { "@type": "TVSeason", seasonNumber: currentEp.season_number } : undefined,
-              partOfSeries: { "@type": "TVSeries", name: content.title },
+              partOfSeries: {
+                "@type": "TVSeries",
+                name: content.title,
+                url: `https://ani.shashanksv.com/content/${content.id}`,
+              },
               image: content.banner_url || content.poster_url || undefined,
               url: canonicalUrl,
+            })}
+          </script>
+          <script type="application/ld+json">
+            {JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "BreadcrumbList",
+              itemListElement: [
+                { "@type": "ListItem", position: 1, name: "Home", item: "https://ani.shashanksv.com/" },
+                { "@type": "ListItem", position: 2, name: content.title, item: `https://ani.shashanksv.com/content/${content.id}` },
+                { "@type": "ListItem", position: 3, name: `S${currentEp?.season_number || 1}E${currentEp?.episode_number || 1}`, item: canonicalUrl },
+              ],
             })}
           </script>
         </Helmet>
