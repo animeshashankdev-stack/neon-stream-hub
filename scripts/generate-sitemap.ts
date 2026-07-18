@@ -19,6 +19,19 @@ async function fetchContentIds(): Promise<string[]> {
   } catch { return []; }
 }
 
+interface EpisodeRow { id: string; content_id: string }
+async function fetchEpisodes(): Promise<EpisodeRow[]> {
+  if (!ANON) return [];
+  try {
+    const r = await fetch(
+      `${SUPABASE_URL}/rest/v1/episodes?select=id,content_id&limit=10000`,
+      { headers: { apikey: ANON, Authorization: `Bearer ${ANON}` } },
+    );
+    if (!r.ok) return [];
+    return await r.json();
+  } catch { return []; }
+}
+
 const staticEntries: Entry[] = [
   { path: "/", changefreq: "daily", priority: "1.0" },
   { path: "/search", changefreq: "daily", priority: "0.9" },
@@ -29,10 +42,15 @@ const staticEntries: Entry[] = [
 ];
 
 (async () => {
-  const ids = await fetchContentIds();
+  const [ids, episodes] = await Promise.all([fetchContentIds(), fetchEpisodes()]);
   const entries: Entry[] = [
     ...staticEntries,
     ...ids.map((id) => ({ path: `/content/${id}`, changefreq: "weekly", priority: "0.7" })),
+    ...episodes.map((e) => ({
+      path: `/watch/${e.content_id}/${e.id}`,
+      changefreq: "weekly",
+      priority: "0.6",
+    })),
   ];
   const xml = [
     `<?xml version="1.0" encoding="UTF-8"?>`,
