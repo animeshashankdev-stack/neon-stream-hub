@@ -8,6 +8,7 @@ import SmartImage from "@/components/SmartImage";
 import { useContentDetail, useEpisodes, useRecommendations } from "@/hooks/useContent";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsInWatchlist, useToggleWatchlist } from "@/hooks/useWatchlist";
+import { cleanImageUrl } from "@/lib/imageUrl";
 
 const BEBAS = { fontFamily: "'Bebas Neue', 'Anton', sans-serif", letterSpacing: "0.01em" } as const;
 const BARLOW = { fontFamily: "'Barlow', 'Inter', sans-serif" } as const;
@@ -60,7 +61,12 @@ const ContentDetail = () => {
   const canonicalUrl = `https://ani.shashanksv.com/content/${content.id}`;
   const seoTitle = `${content.title}${content.release_year ? ` (${content.release_year})` : ""} — Watch on Senpai.tv`;
   const seoDesc = (content.description || `Stream ${content.title} on Senpai.tv in HD.`).slice(0, 155);
-  const ogImage = content.banner_url || content.poster_url || content.thumbnail_url || "";
+  const SITE_OG_FALLBACK = "https://ani.shashanksv.com/og-image.png";
+  const ogImage =
+    cleanImageUrl(content.banner_url) ||
+    cleanImageUrl(content.poster_url) ||
+    cleanImageUrl(content.thumbnail_url) ||
+    SITE_OG_FALLBACK;
   const schema = {
     "@context": "https://schema.org",
     "@type": content.type === "series" ? "TVSeries" : "Movie",
@@ -95,11 +101,14 @@ const ContentDetail = () => {
         <meta property="og:description" content={seoDesc} />
         <meta property="og:type" content={content.type === "series" ? "video.tv_show" : "video.movie"} />
         <meta property="og:url" content={canonicalUrl} />
-        {ogImage && <meta property="og:image" content={ogImage} />}
+        <meta property="og:image" content={ogImage} />
+        <meta property="og:image:secure_url" content={ogImage} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={seoTitle} />
         <meta name="twitter:description" content={seoDesc} />
-        {ogImage && <meta name="twitter:image" content={ogImage} />}
+        <meta name="twitter:image" content={ogImage} />
         <script type="application/ld+json">{JSON.stringify(schema)}</script>
         <script type="application/ld+json">{JSON.stringify(breadcrumbs)}</script>
       </Helmet>

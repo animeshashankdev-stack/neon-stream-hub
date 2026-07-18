@@ -9,6 +9,7 @@ import {
 import { useContentDetail, useEpisodes, useVideoServers } from "@/hooks/useContent";
 import { useStreamToken } from "@/hooks/useStreamToken";
 import { useAuth } from "@/contexts/AuthContext";
+import { cleanImageUrl } from "@/lib/imageUrl";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useEpisodeChapters } from "@/hooks/useEpisodeChapters";
@@ -343,6 +344,13 @@ const Watch = () => {
     ? `${content?.title || "Watch"} — S${currentEp.season_number}E${currentEp.episode_number}${currentEp.title ? `: ${currentEp.title}` : ""}`
     : content?.title || "Watch";
   const episodeDesc = currentEp?.description || content?.description || `Stream ${content?.title || "episode"} on Senpai.tv`;
+  const SITE_OG_FALLBACK = "https://ani.shashanksv.com/og-image.png";
+  const ogImage =
+    cleanImageUrl(currentEp?.thumbnail_url) ||
+    cleanImageUrl(content?.banner_url) ||
+    cleanImageUrl(content?.poster_url) ||
+    cleanImageUrl(content?.thumbnail_url) ||
+    SITE_OG_FALLBACK;
 
   return (
     <div className="senpai-root min-h-screen bg-[#1a1a2e] text-white font-body selection:bg-[#4ade80]/30 flex flex-col">
@@ -355,15 +363,14 @@ const Watch = () => {
           <meta property="og:description" content={episodeDesc.slice(0, 155)} />
           <meta property="og:type" content="video.episode" />
           <meta property="og:url" content={canonicalUrl} />
-          {(content.banner_url || content.poster_url) && (
-            <meta property="og:image" content={content.banner_url || content.poster_url || ""} />
-          )}
+          <meta property="og:image" content={ogImage} />
+          <meta property="og:image:secure_url" content={ogImage} />
+          <meta property="og:image:width" content="1200" />
+          <meta property="og:image:height" content="630" />
           <meta name="twitter:card" content="summary_large_image" />
           <meta name="twitter:title" content={episodeTitle} />
           <meta name="twitter:description" content={episodeDesc.slice(0, 155)} />
-          {(content.banner_url || content.poster_url) && (
-            <meta name="twitter:image" content={content.banner_url || content.poster_url || ""} />
-          )}
+          <meta name="twitter:image" content={ogImage} />
           <script type="application/ld+json">
             {JSON.stringify({
               "@context": "https://schema.org",
