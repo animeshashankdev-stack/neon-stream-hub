@@ -374,6 +374,24 @@ const Watch = () => {
           <script type="application/ld+json">
             {JSON.stringify({
               "@context": "https://schema.org",
+              "@type": "VideoObject",
+              name: episodeTitle,
+              description: episodeDesc.slice(0, 300),
+              thumbnailUrl: [ogImage],
+              uploadDate: currentEp?.created_at || content.created_at || undefined,
+              contentUrl: canonicalUrl,
+              embedUrl: canonicalUrl,
+              isFamilyFriendly: true,
+              publisher: {
+                "@type": "Organization",
+                name: "Senpai.tv",
+                url: "https://ani.shashanksv.com/",
+              },
+            })}
+          </script>
+          <script type="application/ld+json">
+            {JSON.stringify({
+              "@context": "https://schema.org",
               "@type": "TVEpisode",
               name: currentEp?.title || `Episode ${currentEp?.episode_number || 1}`,
               episodeNumber: currentEp?.episode_number,
