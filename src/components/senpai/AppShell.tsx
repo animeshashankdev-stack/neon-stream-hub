@@ -54,7 +54,7 @@ export function AppShell({ children, active = "home", hideNav, hideSidebar, full
 
       {!hideNav && (
         <header className="sticky top-0 z-40">
-          <div className="senpai-glass border-b border-white/5 px-6 py-3 flex items-center gap-6 relative">
+          <div className="senpai-glass border-b border-white/5 px-3 sm:px-6 py-2.5 sm:py-3 flex flex-wrap items-center gap-3 sm:gap-6 relative">
             <SenpaiLogo size={36} tagline />
             <nav className="hidden md:flex items-center gap-1 ml-4">
               {navItems.map((it) => {
@@ -87,7 +87,7 @@ export function AppShell({ children, active = "home", hideNav, hideSidebar, full
                 const q = String(fd.get("q") ?? "").trim();
                 navigate(q ? `/search?q=${encodeURIComponent(q)}` : "/search");
               }}
-              className="flex-1 max-w-xl mx-auto"
+              className="order-last w-full sm:order-none sm:w-auto sm:flex-1 sm:max-w-xl sm:mx-auto"
             >
               <div className="relative group">
                 <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40 group-focus-within:text-fuchsia-300 transition" />
@@ -96,11 +96,11 @@ export function AppShell({ children, active = "home", hideNav, hideSidebar, full
                   className="w-full pl-10 pr-24 py-2.5 rounded-2xl bg-white/[0.04] border border-white/10 focus:border-fuchsia-400/60 focus:bg-white/[0.06] text-sm text-white placeholder:text-white/40 outline-none transition"
                   placeholder="Search anime, movies, manga, channels…"
                 />
-                <kbd className="senpai-mono absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-white/50 border border-white/10 rounded px-1.5 py-0.5 bg-white/5">⌘K</kbd>
+                <kbd className="senpai-mono hidden sm:block absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-white/50 border border-white/10 rounded px-1.5 py-0.5 bg-white/5">⌘K</kbd>
               </div>
             </form>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 ml-auto sm:ml-0">
               <Link
                 to="/profile"
                 className="hidden md:flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-white/70 hover:text-white border border-white/10 hover:border-white/25 rounded-full px-3 py-1.5"

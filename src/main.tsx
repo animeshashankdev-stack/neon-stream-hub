@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import { HelmetProvider } from "react-helmet-async";
 import App from "./App.tsx";
+import ErrorBoundary from "./components/ErrorBoundary";
 import "./index.css";
 import "./styles/senpai.css";
 import "@fontsource/bebas-neue/400.css";
@@ -11,7 +12,9 @@ import { initPWA } from "./pwa/registerSW";
 
 createRoot(document.getElementById("root")!).render(
   <HelmetProvider>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </HelmetProvider>,
 );
 
