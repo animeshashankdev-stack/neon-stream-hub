@@ -378,7 +378,7 @@ const Watch = () => {
               name: episodeTitle,
               description: episodeDesc.slice(0, 300),
               thumbnailUrl: [ogImage],
-              uploadDate: currentEp?.created_at || content.created_at || undefined,
+              uploadDate: content.release_date || undefined,
               contentUrl: canonicalUrl,
               embedUrl: canonicalUrl,
               isFamilyFriendly: true,
