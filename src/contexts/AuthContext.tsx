@@ -22,11 +22,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      // Clean OAuth tokens out of the URL hash once a session exists.
+      if (session && window.location.hash.includes("access_token")) {
+        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+      }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setLoading(false);
+      if (window.location.hash.includes("access_token")) {
+        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+      }
+    }).catch(() => {
       setLoading(false);
     });
 
