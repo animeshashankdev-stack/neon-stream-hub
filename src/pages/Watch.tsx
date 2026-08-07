@@ -492,7 +492,7 @@ const Watch = () => {
                 {!user
                   ? "Sign in required"
                   : isDiscovering
-                    ? "Finding the best server…"
+                    ? "still not working \nFinding the best server…"
                     : iframeError
                       ? "All servers blocked"
                       : langServers.length === 0
