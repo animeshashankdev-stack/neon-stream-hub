@@ -489,7 +489,7 @@ const Watch = () => {
                 )}
               </div>
               <p className="font-mono text-[11px] md:text-xs tracking-[0.2em] text-white/60 uppercase font-bold mb-2">
-        {!user
+                {!user
                   ? "Sign in required"
                   : isDiscovering
                     ? "Finding the best server…"
@@ -498,7 +498,6 @@ const Watch = () => {
                       : langServers.length === 0
                         ? "No server available"
                         : "We couldn't load this source. Try another server."}
-
               </p>
               <p className="text-white/50 text-xs md:text-sm leading-relaxed mb-5">
                 {!user
